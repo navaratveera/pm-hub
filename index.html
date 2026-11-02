@@ -56,6 +56,12 @@ main{display:flex;flex-direction:column;gap:20px;padding-block:24px 56px}
 .newbox{display:flex;gap:12px;flex-wrap:wrap}
 .choice{flex:1 1 220px;text-align:left;border:1px solid var(--sky-200);background:var(--bg);border-radius:var(--r);padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
 .choice:hover{border-color:var(--accent);background:var(--sky-50)}
+/* while choosing how to start, the rest of the page steps back */
+main.choosing{cursor:pointer}
+main.choosing>*:not(#newbox){opacity:.35;filter:grayscale(1);pointer-events:none;user-select:none;transition:opacity .2s,filter .2s}
+main.choosing #newbox{cursor:default;background:var(--bg);border:2px solid var(--accent);box-shadow:0 10px 30px rgba(28,111,224,.18);padding:18px 20px}
+main.choosing #newbox>.grow>b{font-size:16px;color:var(--accent)}
+main.choosing .choice{border-color:#A9C9F3}
 .choice b{font-size:14px}
 .choice span{font-size:12px;color:var(--muted)}
 
@@ -1046,7 +1052,7 @@ $("#btn-shift").addEventListener("click",function(){
 function addPlan(name,items,extra){
   var p=normPlan(Object.assign({id:uid(),name:name,items:items,createdAt:Date.now(),updatedAt:Date.now()},extra||{}));
   plans[p.id]=p; curId=p.id; saveLocal(); schedule(p.id);
-  $("#newbox").hidden=true; renderAll();
+  setNew(false); renderAll();
   var nm=$("#proj-name"); nm.focus(); nm.select();
 }
 function templateItems(){
@@ -1058,8 +1064,15 @@ function templateItems(){
   });
   return items;
 }
-$("#btn-newplan").addEventListener("click",function(){var nb=$("#newbox");nb.hidden=!nb.hidden;if(!nb.hidden){nb.scrollIntoView({block:"nearest",behavior:"smooth"});nb.querySelector(".choice").focus({preventScroll:true})}});
-$("#btn-newcancel").addEventListener("click",function(){$("#newbox").hidden=true});
+function setNew(open){
+  var nb=$("#newbox");nb.hidden=!open;$("main").classList.toggle("choosing",open);
+  if(open){window.scrollTo({top:0,behavior:"smooth"});nb.querySelector(".choice").focus({preventScroll:true})}
+}
+$("#btn-newplan").addEventListener("click",function(){setNew($("#newbox").hidden)});
+$("#btn-newcancel").addEventListener("click",function(){setNew(false)});
+// a click on the grayed-out page, or Escape, closes the chooser
+$("main").addEventListener("click",function(e){if(e.target===e.currentTarget&&!$("#newbox").hidden)setNew(false)});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("#newbox").hidden)setNew(false)});
 document.addEventListener("click",function(e){
   var b=e.target.closest("[data-new]"); if(!b)return;
   if(b.dataset.new==="template"){addPlan("New project",templateItems(),{subtitle:"SDLC TIMELINE"});toast("Created an SDLC timeline starting "+fmtFull(firstWork(nextMonday(today()),{})))}
