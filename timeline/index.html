@@ -67,6 +67,27 @@ main{display:flex;flex-direction:column;gap:20px;padding-block:24px 56px}
 .sub{color:var(--muted);font-size:13px}
 
 [hidden]{display:none!important}
+.modal-bg{position:fixed;inset:0;z-index:90;background:rgba(15,35,64,.38);display:grid;place-items:center;padding:16px}
+.modal{width:100%;max-width:540px;max-height:calc(100vh - 32px);overflow:auto;background:var(--bg);border-radius:14px;padding:20px 20px 16px;box-shadow:0 20px 50px rgba(15,35,64,.25)}
+.modal h3{margin:0 0 4px;font-size:17px}
+.modal p{margin:0 0 12px;color:var(--muted);font-size:13px}
+.modal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+.modal input[type=text]{width:100%;border:1px solid var(--sky-200);border-radius:8px;padding:8px 10px;font:inherit;font-size:14px}
+.modal .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.linkbox{display:flex;gap:6px;margin-top:6px}
+.linkbox input{flex:1;min-width:0;font-family:var(--f-mono);font-size:12px!important;background:var(--sky-50)}
+.changes{list-style:none;margin:8px 0 0;padding:0;border:1px solid var(--line);border-radius:10px;max-height:300px;overflow:auto}
+.changes li{padding:7px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.changes li:last-child{border-bottom:0}
+.changes .k{display:inline-block;min-width:66px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.changes .k.add{color:#16793F}.changes .k.del{color:#B4232A}.changes .k.chg{color:#8A5A00}
+.share-note{margin:0 0 12px}
+.share-note b{color:var(--ink)}
+.share-note .hist{color:var(--muted);font-size:12px}
+tr.edited td:first-child{box-shadow:inset 3px 0 0 #F2BE2C}
+.name-cell{position:relative}
+.name-cell .edited-tag{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none}
+.edited-tag{display:inline-block;font-size:10px;font-weight:700;color:#8A5A00;background:#FFF4D6;border:1px solid #F2D58A;border-radius:999px;padding:0 6px;margin-right:2px;vertical-align:middle;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .note{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--sky-50);border:1px solid var(--sky-200);border-radius:var(--r);padding:12px 16px;font-size:13px}
 .note .grow{flex:1 1 260px;min-width:0}
 .newbox{display:flex;gap:12px;flex-wrap:wrap}
@@ -342,7 +363,8 @@ function normItem(it){
   return{id:String(it.id||uid()),lane:String(it.lane||(it.phase&&OLD_PHASE[it.phase])||"General").trim()||"General",group:String(it.group||"").trim(),
     name:String(it.name||""),type:it.type==="milestone"?"milestone":"task",
     start:toN(it.start)!=null?it.start:"",end:toN(it.end)!=null?it.end:"",revEnd:toN(it.revEnd)!=null?it.revEnd:"",
-    status:STATUS[it.status]?it.status:"notstarted"};
+    status:STATUS[it.status]?it.status:"notstarted",
+    edit:it.edit&&it.edit.by?{by:String(it.edit.by),at:+it.edit.at||0,what:String(it.edit.what||"")}:undefined};
 }
 // lanes and platforms are ordered lists; any name an activity uses is added to the end
 function nameList(list,used){
@@ -359,7 +381,8 @@ function normPlan(p){
     holidays:(Array.isArray(p.holidays)?p.holidays:[]).filter(function(h){return h&&toN(h.date)!=null}).map(function(h){return{date:h.date,name:String(h.name||"Holiday")}}),
     viewFrom:toN(p.viewFrom)!=null?p.viewFrom:"",viewTo:toN(p.viewTo)!=null?p.viewTo:"",scale:SCALES[p.scale]?p.scale:"day",
     lanes:lanes,platforms:nameList(p.platforms,items.map(function(it){return it.group})),platformColors:p.platformColors,
-    items:items,createdAt:+p.createdAt||Date.now(),updatedAt:+p.updatedAt||0});
+    items:items,createdAt:+p.createdAt||Date.now(),updatedAt:+p.updatedAt||0,
+    history:(Array.isArray(p.history)?p.history:[]).filter(function(h){return h&&h.by}).slice(-30)});
 }
 // squad colors: every project/squad keeps its own color; new ones take the next unused palette color
 var SQUAD_COLORS=["#7C5CDB","#0E9F9A","#E07B39","#D6458B","#4F6BD8","#8A9A2B","#A0673A","#1F9BD1","#B5446E","#5E8C61"];
@@ -386,7 +409,7 @@ var example=freshExample();
 function cur(){return (curId&&plans[curId])||example}
 function sortedIds(){return Object.keys(plans).sort(function(a,b){return plans[b].updatedAt-plans[a].updatedAt})}
 function saveLocal(){lsSet(LS_PLANS,JSON.stringify(plans));if(curId)lsSet(LS_CUR,curId)}
-function wire(p){return{name:p.name,subtitle:p.subtitle,holidays:p.holidays,viewFrom:p.viewFrom,viewTo:p.viewTo,scale:p.scale,lanes:p.lanes,platforms:p.platforms,platformColors:p.platformColors,items:p.items,createdAt:p.createdAt,updatedAt:p.updatedAt}}
+function wire(p){return{name:p.name,subtitle:p.subtitle,holidays:p.holidays,viewFrom:p.viewFrom,viewTo:p.viewTo,scale:p.scale,lanes:p.lanes,platforms:p.platforms,platformColors:p.platformColors,items:p.items,createdAt:p.createdAt,updatedAt:p.updatedAt,history:p.history}}
 
 var timers={}, inflight={}, again={};
 function schedule(id){if(mode!=="cloud")return;clearTimeout(timers[id]);timers[id]=setTimeout(function(){flush(id)},800)}
@@ -446,7 +469,7 @@ document.getElementById("app").innerHTML=
  '<header class="top"><div class="wrap top-in">'+
    '<div class="brand">'+(IN_HUB?'<a href="../" aria-label="Back to PM Hub" style="display:flex">'+LOGO+'</a><a class="hub-link" href="../">PM Hub</a><span class="crumb">/</span>':LOGO)+'<span>SDLC Timeline Planner</span></div>'+
    '<div class="plan-pick"><div class="tl"><button id="tl-btn" class="tl-btn" type="button" aria-haspopup="true" aria-expanded="false"><span id="tl-label"></span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="tl-menu" class="tl-menu" hidden></div></div>'+
-   '<button id="btn-newplan" class="btn primary" type="button">+ New timeline</button></div>'+
+   '<button id="btn-newplan" class="btn primary" type="button">+ New timeline</button>'+(IN_HUB?'<button id="btn-share" class="btn" type="button" title="Send this timeline to someone">Share</button>':'')+'</div>'+
    '<span id="sync" class="sync"><i></i><span></span></span>'+
  '</div></header>'+
  '<main class="wrap">'+
@@ -461,6 +484,7 @@ document.getElementById("app").innerHTML=
      '<input id="proj-name" class="proj-name" aria-label="Timeline name" placeholder="Name your project">'+
      '<input id="proj-sub" class="proj-sub" aria-label="Subtitle" placeholder="Add a subtitle (shown on the chart)">'+
      '<span id="sub" class="sub"></span></div>'+
+   '<div id="share-note" class="note share-note" hidden></div>'+
    '<div id="sample-note" class="note" hidden><span class="grow"><b>This is an example.</b> Edit any row and it becomes your own timeline, or start fresh from the SDLC template.</span><button class="btn" type="button" data-new="template">Use SDLC template</button></div>'+
    '<section id="summary" class="summary" aria-label="Project summary"></section>'+
    '<section class="panel">'+
@@ -909,11 +933,12 @@ function rowHTML(it,H){
   var id=it.id;
   var p=cur();
   function opts(list,v){return list.map(function(x){return '<option value="'+esc(x)+'"'+(x===v?" selected":"")+'>'+esc(x)+'</option>'}).join("")}
-  return '<tr data-id="'+id+'"'+(bad?' class="bad"':'')+'>'+
+  var ed=it.edit?'Edited by '+it.edit.by+' · '+fmtFull(Math.floor(it.edit.at/864e5))+(it.edit.what?' · '+it.edit.what:''):'';
+  return '<tr data-id="'+id+'"'+((bad||ed)?' class="'+(bad?"bad ":"")+(ed?"edited":"")+'"':'')+(ed?' title="'+esc(ed)+'"':'')+'>'+
    '<td class="grip-cell"><button type="button" class="grip" data-grip title="Drag to move · or use ↑ ↓ keys" aria-label="Move '+esc(it.name||"activity")+' (drag, or press up/down arrow)">⠿</button></td>'+
    '<td data-label="Lane"><select id="f-'+id+'-lane" data-f="lane" aria-label="Lane">'+opts(p.lanes,it.lane)+'</select></td>'+
    '<td class="sq" data-label="Project/Squad"'+sqStyle(it.group)+'><span class="sw"><i></i><select id="f-'+id+'-group" data-f="group" aria-label="Project/Squad"><option value="">— None —</option>'+opts(p.platforms,it.group)+'</select></span></td>'+
-   '<td class="name-cell" data-label="Activity"><input id="f-'+id+'-name" data-f="name" value="'+esc(it.name)+'" placeholder="Activity name" aria-label="Activity"></td>'+
+   '<td class="name-cell" data-label="Activity"><input id="f-'+id+'-name" data-f="name" value="'+esc(it.name)+'" placeholder="Activity name" aria-label="Activity"'+(it.edit?' style="padding-right:'+Math.min(120,24+it.edit.by.length*6)+'px"':'')+'>'+(it.edit?'<span class="edited-tag" title="'+esc(ed)+'">✎ '+esc(it.edit.by)+'</span>':'')+'</td>'+
    '<td data-label="Type"><select id="f-'+id+'-type" data-f="type" aria-label="Type"><option value="task"'+(ms?"":" selected")+'>Activity</option><option value="milestone"'+(ms?" selected":"")+'>Milestone ▲</option></select></td>'+
    '<td data-label="'+(ms?"Date":"Start")+'"><input id="f-'+id+'-start" data-f="start" type="text" class="date-in" autocomplete="off" placeholder="dd/mm/yyyy" value="'+dmy(it.start)+'" aria-label="'+(ms?"Milestone date":"Start date")+'"></td>'+
    '<td data-label="End"><input id="f-'+id+'-end" data-f="end" type="text" class="date-in" autocomplete="off" placeholder="dd/mm/yyyy" value="'+(ms?"":dmy(it.end))+'" aria-label="End date"'+(ms?" disabled":"")+'></td>'+
@@ -1075,7 +1100,7 @@ $("#tbody").addEventListener("click",function(e){
   var its=cur().items, i=idx(b.closest("tr").dataset.id), act=b.dataset.act, focusId=null;
   if(act==="up"&&i>0){its.splice(i-1,0,its.splice(i,1)[0]);focusId=its[i-1].id}
   else if(act==="down"&&i<its.length-1){its.splice(i+1,0,its.splice(i,1)[0]);focusId=its[i+1].id}
-  else if(act==="dup"){var c=Object.assign({},its[i],{id:uid(),name:its[i].name+" (copy)"});its.splice(i+1,0,c);focusId=c.id}
+  else if(act==="dup"){var c=Object.assign({},its[i],{id:uid(),name:its[i].name+" (copy)"});delete c.edit;its.splice(i+1,0,c);focusId=c.id}
   else if(act==="del"){
     var planId=cur().id; lastDeleted={item:its[i],index:i};its.splice(i,1);
     toast("Deleted “"+(lastDeleted.item.name||"activity")+"”","Undo",function(){
@@ -1304,13 +1329,135 @@ function toast(msg,actLabel,act){
   el.classList.add("show"); clearTimeout(tt); tt=setTimeout(function(){el.classList.remove("show")},actLabel?6000:3200);
 }
 
+/* ---------- share by link ----------
+   The whole timeline travels in the link after "#", so it never reaches a server.
+   When a friend edits their copy and shares it back, opening their link shows what they changed
+   and lets you apply it; changed rows keep a "who edited" tag until you mark them as seen. */
+var LS_NAME="sdlc-my-name";
+function myName(){return (lsGet(LS_NAME)||"").trim()}
+function when(t){var d=new Date(t);return fmtFull(Math.floor(t/864e5))+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function b64u(bytes){var s="";for(var i=0;i<bytes.length;i++)s+=String.fromCharCode(bytes[i]);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function unb64u(str){str=str.replace(/-/g,"+").replace(/_/g,"/");var b=atob(str),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+function pipe(bytes,stream){return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function(b){return new Uint8Array(b)})}
+function packShare(obj){
+  var raw=new TextEncoder().encode(JSON.stringify(obj));
+  if(typeof CompressionStream==="undefined")return Promise.resolve("j"+b64u(raw));
+  return pipe(raw,new CompressionStream("deflate-raw")).then(function(z){return "z"+b64u(z)});
+}
+function unpackShare(str){
+  var kind=str.charAt(0), bytes=unb64u(str.slice(1));
+  var p=kind==="z"?pipe(bytes,new DecompressionStream("deflate-raw")):Promise.resolve(bytes);
+  return p.then(function(b){return JSON.parse(new TextDecoder().decode(b))});
+}
+function modal(html){
+  var bg=document.createElement("div"); bg.className="modal-bg"; bg.innerHTML='<div class="modal" role="dialog" aria-modal="true">'+html+'</div>';
+  document.body.appendChild(bg);
+  function close(){bg.remove();document.removeEventListener("keydown",esc1)}
+  function esc1(e){if(e.key==="Escape")close()}
+  document.addEventListener("keydown",esc1);
+  bg.addEventListener("click",function(e){if(e.target===bg||e.target.closest("[data-close]"))close()});
+  return {el:bg,close:close};
+}
+function shareDialog(){
+  if(cur().sample){touch({quiet:true});renderPicker();renderShareNote()} // sharing the example makes it your own first
+  var p=cur();
+  var m=modal('<h3>Share “'+esc(p.name)+'”</h3><p>Anyone with the link can open a copy of this timeline. If they edit it, they press Share and send their link back to you: you will see exactly what they changed.</p>'+
+    '<label for="sh-name">Your name (shown to the person you send it to)</label><input type="text" id="sh-name" value="'+esc(myName())+'" placeholder="e.g. May" maxlength="40" autocomplete="name">'+
+    '<div id="sh-out" hidden><label>Link</label><div class="linkbox"><input type="text" id="sh-link" readonly><button class="btn primary" type="button" id="sh-copy">Copy</button></div><p style="margin-top:8px">The link holds the timeline itself, so it changes whenever the timeline changes. Share again after edits.</p></div>'+
+    '<div class="row"><button class="btn" type="button" data-close>Close</button><button class="btn primary" type="button" id="sh-make">Create link</button></div>');
+  var nm=m.el.querySelector("#sh-name"); nm.focus();
+  function make(){
+    var who=nm.value.trim(); if(!who){nm.focus();nm.placeholder="Please type your name";return}
+    lsSet(LS_NAME,who);
+    var at=Date.now(); p.history=(p.history||[]).concat([{by:who,at:at,act:"shared"}]).slice(-30);
+    p.updatedAt=Math.max(p.updatedAt,1); saveLocal(); schedule(p.id);
+    var w=wire(p); w.items=w.items.map(function(it){var c=Object.assign({},it);delete c.edit;return c});
+    packShare({v:1,id:p.id,by:who,at:at,plan:w}).then(function(code){
+      var url=location.origin+location.pathname+"#s="+code;
+      m.el.querySelector("#sh-out").hidden=false; var li=m.el.querySelector("#sh-link"); li.value=url; li.select();
+      m.el.querySelector("#sh-make").textContent="Update link"; renderShareNote();
+    });
+  }
+  m.el.querySelector("#sh-make").addEventListener("click",make);
+  nm.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();make()}});
+  m.el.querySelector("#sh-copy").addEventListener("click",function(){
+    var li=m.el.querySelector("#sh-link"), b=this;
+    (navigator.clipboard?navigator.clipboard.writeText(li.value):Promise.reject()).then(function(){b.textContent="Copied ✓"},function(){li.select();document.execCommand&&document.execCommand("copy");b.textContent="Copied ✓"});
+  });
+}
+// what changed between my copy (a) and the incoming one (b)
+var DIFF_F=[["name","name"],["lane","lane"],["group","project/squad"],["type","type"],["start","start"],["end","end"],["revEnd","revised end"],["status","status"]];
+function showVal(f,v){if(f==="status")return STATUS[v]?STATUS[v].en:v;if(f==="type")return v==="milestone"?"Milestone":"Activity";if(/start|end|revEnd/.test(f))return v?fmtShort(toN(v)):"—";return v||"—"}
+function diffPlans(a,b){
+  var out=[], A={}, B={};
+  a.items.forEach(function(it){A[it.id]=it}); b.items.forEach(function(it){B[it.id]=it});
+  if(a.name!==b.name)out.push({k:"chg",t:"Timeline name: “"+a.name+"” → “"+b.name+"”"});
+  b.items.forEach(function(it){
+    var o=A[it.id]; if(!o){out.push({k:"add",id:it.id,t:(it.name||"(untitled)")+(it.start?" · "+fmtShort(toN(it.start))+(it.end?"–"+fmtShort(toN(it.end)):""):""),what:"added"});return}
+    var parts=[]; DIFF_F.forEach(function(f){if((o[f[0]]||"")!==(it[f[0]]||""))parts.push(f[1]+" "+showVal(f[0],o[f[0]])+" → "+showVal(f[0],it[f[0]]))});
+    if(parts.length)out.push({k:"chg",id:it.id,t:(it.name||o.name||"(untitled)")+": "+parts.join(" · "),what:parts.join(" · ")});
+  });
+  a.items.forEach(function(it){if(!B[it.id])out.push({k:"del",t:it.name||"(untitled)"})});
+  var ha=a.holidays.map(function(h){return h.date}).join(), hb=b.holidays.map(function(h){return h.date}).join();
+  if(ha!==hb)out.push({k:"chg",t:"Holidays: "+a.holidays.length+" → "+b.holidays.length});
+  return out;
+}
+function receive(obj){
+  var inc=normPlan(Object.assign({},obj.plan,{id:obj.id}));
+  var by=obj.by||"Someone", at=+obj.at||Date.now(), mine=plans[obj.id];
+  if(!mine){ // first time: keep it as one of my timelines
+    inc.updatedAt=Date.now(); plans[inc.id]=inc; curId=inc.id; saveLocal(); schedule(inc.id); renderAll();
+    toast("Opened “"+inc.name+"” shared by "+by);
+    return;
+  }
+  var ch=diffPlans(mine,inc);
+  if(!ch.length){curId=mine.id;lsSet(LS_CUR,curId);renderAll();toast("This link matches your copy of “"+mine.name+"”: nothing new");return}
+  var mm=modal('<h3>'+esc(by)+' edited “'+esc(mine.name)+'”</h3><p>Shared '+esc(when(at))+' · '+ch.length+' change'+(ch.length>1?"s":"")+' compared with your copy.</p>'+
+    '<ul class="changes">'+ch.map(function(c){return '<li><span class="k '+c.k+'">'+{add:"Added",del:"Removed",chg:"Changed"}[c.k]+'</span>'+esc(c.t)+'</li>'}).join("")+'</ul>'+
+    '<div class="row"><button class="btn" type="button" data-close>Not now</button><button class="btn" type="button" id="rc-copy">Keep as separate copy</button><button class="btn primary" type="button" id="rc-apply">Apply changes</button></div>');
+  mm.el.querySelector("#rc-apply").addEventListener("click",function(){
+    var snap=JSON.parse(JSON.stringify(mine)), marks={};
+    ch.forEach(function(c){if(c.id)marks[c.id]=c.what});
+    inc.items.forEach(function(it){var old=mine.items.filter(function(x){return x.id===it.id})[0];if(marks[it.id]!=null)it.edit={by:by,at:at,what:marks[it.id]};else if(old&&old.edit)it.edit=old.edit});
+    inc.createdAt=mine.createdAt; inc.updatedAt=Date.now();
+    inc.history=(mine.history||[]).concat([{by:by,at:at,act:"edited",n:ch.length}]).slice(-30);
+    plans[inc.id]=inc; curId=inc.id; saveLocal(); schedule(inc.id); mm.close(); renderAll();
+    toast("Applied "+ch.length+" change"+(ch.length>1?"s":"")+" from "+by,"Undo",function(){plans[snap.id]=normPlan(snap);saveLocal();schedule(snap.id);renderAll()});
+  });
+  mm.el.querySelector("#rc-copy").addEventListener("click",function(){
+    inc.id=uid(); inc.name=inc.name+" ("+by+")"; inc.updatedAt=Date.now(); inc.history=(inc.history||[]).concat([{by:by,at:at,act:"shared"}]);
+    plans[inc.id]=inc; curId=inc.id; saveLocal(); schedule(inc.id); mm.close(); renderAll(); toast("Saved "+by+"’s version as a separate timeline");
+  });
+}
+function renderShareNote(){
+  var el=$("#share-note"); if(!el)return; var p=cur(), h=(p.history||[]), ed=p.items.filter(function(it){return it.edit});
+  if(p.sample||(!h.length&&!ed.length)){el.hidden=true;return}
+  var last=h[h.length-1], line="";
+  if(ed.length){var who={};ed.forEach(function(it){who[it.edit.by]=1});line='<b>'+ed.length+' '+(ed.length>1?"activities":"activity")+' edited by '+esc(Object.keys(who).join(", "))+'</b> · marked in yellow in the table';}
+  else if(last)line=last.act==="edited"?'<b>Last edited by '+esc(last.by)+'</b> · '+esc(when(last.at)):'<b>Shared by '+esc(last.by)+'</b> · '+esc(when(last.at));
+  var hist=h.slice(-4).reverse().map(function(x){return esc(x.by)+' '+(x.act==="edited"?"edited ("+(x.n||0)+")":"shared")+' '+esc(when(x.at))}).join(" · ");
+  el.innerHTML='<span class="grow">'+line+(hist?'<br><span class="hist">History: '+hist+'</span>':'')+'</span>'+(ed.length?'<button class="btn" type="button" id="btn-seen">Mark as seen</button>':'')+(IN_HUB?'<button class="btn" type="button" data-share>Share</button>':'');
+  el.hidden=false;
+}
+document.addEventListener("click",function(e){
+  if(e.target.closest("#btn-share,[data-share]"))shareDialog();
+  if(e.target.closest("#btn-seen")){cur().items.forEach(function(it){delete it.edit});touch({quiet:true});renderTable();renderShareNote()}
+});
+function readHash(){
+  var m=/^#s=([A-Za-z0-9_\-]+)$/.exec(location.hash||""); if(!m)return;
+  history.replaceState(null,"",location.pathname+location.search);
+  unpackShare(m[1]).then(function(obj){if(obj&&obj.plan&&obj.id)receive(obj)}).catch(function(){toast("That share link looks incomplete. Ask for it again.")});
+}
+window.addEventListener("hashchange",readHash);
+
 /* ---------- boot ---------- */
 function renderAll(){
-  pn.value=cur().name; ps.value=cur().subtitle; $("#sample-note").hidden=!cur().sample;
+  pn.value=cur().name; ps.value=cur().subtitle; $("#sample-note").hidden=!cur().sample; renderShareNote();
   renderPicker(); renderStructure(); renderTable(); renderHolidays(); renderSummary(); lastW=$("#chart-wrap").clientWidth; renderChart(); setSync(syncState);
 }
 renderAll();
 connect();
+readHash();
 // the TODAY line, overdue counts and countdowns move on by themselves when the date changes
 var shownDay=today();
 function dayTick(){if(today()!==shownDay){shownDay=today();renderSummary();renderChart();renderHolidays()}}
