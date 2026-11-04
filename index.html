@@ -126,8 +126,6 @@ main.choosing .choice{border-color:#A9C9F3}
 #chart svg{display:block}
 #chart [data-go]{cursor:pointer}
 #chart [data-go]:hover polygon.fill{filter:brightness(1.07)}
-.chart-foot{display:flex;gap:6px 18px;flex-wrap:wrap;padding:8px 16px 14px;font-size:12px;color:var(--muted)}
-.chart-foot span{display:inline-flex;align-items:center;gap:6px}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
 
 /* holidays */
@@ -456,7 +454,6 @@ document.getElementById("app").innerHTML=
          '<button id="btn-png" class="btn primary" type="button">Export PNG</button>'+
        '</div></div>'+
      '<div class="chart-scroll" id="chart-wrap"><div id="chart"></div></div>'+
-     '<div class="chart-foot"><span>▲ Milestone</span><span>Gray column = holiday</span><span>Hollow arrow = extended beyond the original end date</span><span>The red TODAY line moves forward by itself each day</span><span>Day / Week / Month changes the column size; the chart always fits the page</span><span>Leave From/To empty to fit all activities</span></div>'+
    '</section>'+
    '<section class="panel">'+
      '<div class="panel-head"><h2>Holidays<small id="hol-count"></small></h2>'+
