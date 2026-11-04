@@ -363,7 +363,7 @@ function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 (function(){
   try{var o=JSON.parse(lsGet(LS_PLANS)||"{}");Object.keys(o).forEach(function(id){plans[id]=normPlan(o[id])})}catch(e){}
-  var c=lsGet(LS_CUR); curId=plans[c]?c:(sortedIds()[0]||null);
+  var c=lsGet(LS_CUR); curId=plans[c]?c:(c==="example"?null:(sortedIds()[0]||null));
 })();
 function freshExample(){return normPlan(JSON.parse(JSON.stringify(EXAMPLE)))}
 var example=freshExample();
@@ -497,12 +497,17 @@ function setSync(s){
 /* ---------- picker ---------- */
 function renderPicker(){
   var ids=sortedIds(), html="";
-  if(cur().sample)html+='<option value="example" selected>'+esc(example.name)+'</option>';
   ids.forEach(function(id){html+='<option value="'+id+'"'+(id===curId&&!cur().sample?" selected":"")+'>'+esc(plans[id].name||"Untitled timeline")+'</option>'});
+  // the example always stays one click away
+  var ex='<option value="example"'+(cur().sample?" selected":"")+'>'+esc(example.name)+'</option>';
+  html+=ids.length?'<optgroup label="Example">'+ex+'</optgroup>':ex;
   var sel=$("#picker"); sel.innerHTML=html; sel.hidden=!ids.length&&cur().sample;
   $("#btn-delplan").hidden=cur().sample;
 }
-$("#picker").addEventListener("change",function(e){var v=e.target.value;if(plans[v]){curId=v;lsSet(LS_CUR,v);renderAll()}});
+$("#picker").addEventListener("change",function(e){var v=e.target.value;
+  if(plans[v]){curId=v;lsSet(LS_CUR,v);renderAll()}
+  else if(v==="example"){curId=null;lsSet(LS_CUR,"example");renderAll()}
+});
 
 /* ---------- summary ---------- */
 function renderSummary(){
