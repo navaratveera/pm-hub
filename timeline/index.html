@@ -655,13 +655,11 @@ function buildChart(p,availW){
   // geometry + row packing
   // compact rows so long plans stay a manageable height
   var ROWH=22, BH=17, TIP=7, FS=10.5;
-  // every name sits inside its bar: step the font down a little, then shorten with "…" (full name stays in the tooltip)
+  // a name sits inside its bar when it fits (stepping the font down a little); otherwise it goes beside the bar
   function fitText(s,max){
     var sizes=[FS,9.5,8.5];
     for(var i=0;i<sizes.length;i++)if(tw(s,sizes[i],true)<=max)return{t:s,fs:sizes[i]};
-    var f=sizes[sizes.length-1];
-    while(s.length>1&&tw(s+"…",f,true)>max)s=s.slice(0,-1);
-    return{t:s.length>1?s.trim()+"…":"",fs:f};
+    return null;
   }
   lanes.forEach(function(L){L.groups.forEach(function(g){
     // layout: milestones share the top row(s); activities flow downward in start-date order.
@@ -682,8 +680,13 @@ function buildChart(p,availW){
         var f=finish(it);
         geo.x0=xs(sp[0])+1;geo.x1=Math.max(geo.x0+3,xe(sp[1])-1);geo.xR=Math.max(geo.x1,xe(f)-1);geo.ext=extended(it)&&geo.xR>geo.x1+1;
         var ft=fitText(label,geo.x1-geo.x0-TIP-8);
-        geo.label=ft.t;geo.fs=ft.fs;
         geo.e0=geo.x0;geo.e1=geo.xR;
+        if(ft){geo.label=ft.t;geo.fs=ft.fs}
+        else{ // outside: right of the bar, or left of it near the chart's right edge; the row keeps that space free
+          var ow=tw(label,FS-.5,true);
+          geo.out=label;geo.outLeft=geo.xR+6+ow>W&&geo.x0-6-ow>=X0;
+          if(geo.outLeft)geo.e0=geo.x0-6-ow;else geo.e1=geo.xR+6+ow;
+        }
       }
       geos.push(geo);
     });
@@ -791,6 +794,7 @@ function buildChart(p,availW){
       if(geo.ext)o.push('<polygon points="'+chev(geo.x0,geo.xR,ry,BH,TIP)+'" fill="#FFFFFF" fill-opacity=".85" stroke="'+st.c+'" stroke-width="1.5"/>');
       o.push('<polygon class="fill" points="'+chev(geo.x0,geo.x1,ry,BH,TIP)+'" fill="'+st.c+'"/>');
       if(geo.label)o.push('<text x="'+((geo.x0+geo.x1-TIP/2)/2)+'" y="'+(ty-(FS-geo.fs)/3)+'" text-anchor="middle" font-size="'+geo.fs+'" font-weight="600" fill="'+st.fg+'">'+esc(geo.label)+'</text>');
+      else if(geo.out)o.push('<text x="'+(geo.outLeft?geo.x0-6:geo.xR+6)+'" y="'+ty+'" text-anchor="'+(geo.outLeft?"end":"start")+'" font-size="'+(FS-.5)+'" font-weight="600" fill="'+C.head+'">'+esc(geo.out)+'</text>');
     }
     o.push('</g>');
   })})});
