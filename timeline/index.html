@@ -598,7 +598,7 @@ function tw(s,size,bold){ // rough text width; Thai glyphs are narrower than Lat
 function chev(x0,x1,y,h,tip){tip=Math.max(0,Math.min(tip,(x1-x0)/2));return x0+","+y+" "+(x1-tip)+","+y+" "+x1+","+(y+h/2)+" "+(x1-tip)+","+(y+h)+" "+x0+","+(y+h)}
 function wrapWords(s,max){var out=[],line="";String(s).split(/\s+/).forEach(function(w){if(!line)line=w;else if((line+" "+w).length<=max)line+=" "+w;else{out.push(line);line=w}});if(line)out.push(line);return out.slice(0,4)}
 
-function buildChart(p,availW){
+function buildChart(p,availW,padR){
   var H=holSet(p), its=p.items, t=today(), scale=SCALES[p.scale]?p.scale:"day";
   var a=Infinity,b=-Infinity,n;
   its.forEach(function(it){var sp=span(it);if(sp){a=Math.min(a,sp[0]);b=Math.max(b,finish(it))}});
@@ -634,7 +634,9 @@ function buildChart(p,availW){
   // projects/squads get their own narrow strip with rotated text, like lanes
   var LANEW=34, GROUPW=hasGroups?30:0, X0=LANEW+GROUPW;
   // always fit the page width; columns never grow past a comfortable maximum
-  var cw=Math.min(SCALES[scale].max,(availW-X0)/N), W=X0+N*cw;
+  // padR: blank space kept on the right so names beside the last bars are not cut off
+  padR=padR||0;
+  var cw=Math.min(SCALES[scale].max,(availW-X0-padR)/N), W=X0+N*cw, SW=W+padR;
   function cx(c){return X0+c*cw}
   function clamp(x){return Math.max(X0,Math.min(W,x))}
   // x where day d starts / ends on this scale
@@ -654,7 +656,7 @@ function buildChart(p,availW){
 
   // geometry + row packing
   // compact rows so long plans stay a manageable height
-  var ROWH=22, BH=17, TIP=7, FS=10.5;
+  var ROWH=22, BH=17, TIP=7, FS=10.5, OFS=8.5;
   // a name sits inside its bar when it fits (stepping the font down a little); otherwise it goes beside the bar
   function fitText(s,max){
     var sizes=[FS,9.5,8.5];
@@ -682,10 +684,8 @@ function buildChart(p,availW){
         var ft=fitText(label,geo.x1-geo.x0-TIP-8);
         geo.e0=geo.x0;geo.e1=geo.xR;
         if(ft){geo.label=ft.t;geo.fs=ft.fs}
-        else{ // outside: right of the bar, or left of it near the chart's right edge; the row keeps that space free
-          var ow=tw(label,FS-.5,true);
-          geo.out=label;geo.outLeft=geo.xR+6+ow>W&&geo.x0-6-ow>=X0;
-          if(geo.outLeft)geo.e0=geo.x0-6-ow;else geo.e1=geo.xR+6+ow;
+        else{ // outside: always to the right of the bar, in smaller type; the row keeps that space free
+          geo.out=label;geo.e1=geo.xR+5+tw(label,OFS,true);
         }
       }
       geos.push(geo);
@@ -700,6 +700,11 @@ function buildChart(p,availW){
     g.geo=geos;
     g.rows=Math.max(1,msEnds.length+tEnds.length);
   })});
+  if(!padR){
+    var over=0;
+    lanes.forEach(function(L){L.groups.forEach(function(g){g.geo.forEach(function(geo){if(geo.out&&geo.e1>W)over=Math.max(over,geo.e1-W)})})});
+    if(over>0)return buildChart(p,availW,Math.ceil(over)+8);
+  }
 
   // header groups (top row) and column labels (bottom row)
   var tops=[], wc={};
@@ -738,8 +743,8 @@ function buildChart(p,availW){
   });
   var BOT=y, HT=BOT+12;
   var o=[];
-  o.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+HT+'" viewBox="0 0 '+W+' '+HT+'" font-family="'+FONT+'" role="img" aria-label="'+esc((title||"Timeline")+" chart")+'">');
-  o.push('<rect width="'+W+'" height="'+HT+'" fill="#FFFFFF"/>');
+  o.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+SW+'" height="'+HT+'" viewBox="0 0 '+SW+' '+HT+'" font-family="'+FONT+'" role="img" aria-label="'+esc((title||"Timeline")+" chart")+'">');
+  o.push('<rect width="'+SW+'" height="'+HT+'" fill="#FFFFFF"/>');
   if(title)o.push('<text x="2" y="28" font-size="21" font-weight="700" fill="'+C.ink+'">'+esc(title)+'</text>');
   if(subtitle)o.push('<text x="2" y="'+(title?50:28)+'" font-size="14" font-weight="700" fill="'+C.accent+'">'+esc(subtitle)+'</text>');
   var lx=legendBelow?2:W-legendW;
@@ -755,7 +760,7 @@ function buildChart(p,availW){
     if(lab)o.push('<text x="'+(x+ww/2)+'" y="'+(HY+WK/2+4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">'+esc(lab)+'</text>');
   });
   // body background
-  lanes.forEach(function(L,li){o.push('<rect x="0" y="'+L.y+'" width="'+W+'" height="'+L.h+'" fill="'+(li%2?C.laneB:"#FFFFFF")+'"/>')});
+  lanes.forEach(function(L,li){o.push('<rect x="0" y="'+L.y+'" width="'+SW+'" height="'+L.h+'" fill="'+(li%2?C.laneB:"#FFFFFF")+'"/>')});
   // holidays
   Object.keys(H).forEach(function(k){var d=+k;if(d<from||d>to||isWE(d))return;var x0=xs(d),x1=xe(d);
     o.push('<rect x="'+x0+'" y="'+(HY+WK)+'" width="'+Math.max(1.5,x1-x0)+'" height="'+(BOT-HY-WK)+'" fill="'+C.hol+'"><title>'+esc(fmtFull(d)+" · "+H[d])+'</title></rect>')});
@@ -794,7 +799,7 @@ function buildChart(p,availW){
       if(geo.ext)o.push('<polygon points="'+chev(geo.x0,geo.xR,ry,BH,TIP)+'" fill="#FFFFFF" fill-opacity=".85" stroke="'+st.c+'" stroke-width="1.5"/>');
       o.push('<polygon class="fill" points="'+chev(geo.x0,geo.x1,ry,BH,TIP)+'" fill="'+st.c+'"/>');
       if(geo.label)o.push('<text x="'+((geo.x0+geo.x1-TIP/2)/2)+'" y="'+(ty-(FS-geo.fs)/3)+'" text-anchor="middle" font-size="'+geo.fs+'" font-weight="600" fill="'+st.fg+'">'+esc(geo.label)+'</text>');
-      else if(geo.out)o.push('<text x="'+(geo.outLeft?geo.x0-6:geo.xR+6)+'" y="'+ty+'" text-anchor="'+(geo.outLeft?"end":"start")+'" font-size="'+(FS-.5)+'" font-weight="600" fill="'+C.head+'">'+esc(geo.out)+'</text>');
+      else if(geo.out)o.push('<text x="'+(geo.xR+5)+'" y="'+(ty-.6)+'" font-size="'+OFS+'" font-weight="600" fill="'+C.head+'">'+esc(geo.out)+'</text>');
     }
     o.push('</g>');
   })})});
