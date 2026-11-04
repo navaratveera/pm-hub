@@ -29,7 +29,20 @@ button,input,select{font:inherit;color:inherit}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;white-space:nowrap;margin-right:auto}
 .brand svg{flex:none}
 .plan-pick{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.plan-pick select{border:1px solid var(--sky-200);background:var(--bg);border-radius:8px;padding:6px 10px;max-width:260px;font-size:13px;font-weight:500}
+.tl{position:relative}
+.tl-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--sky-200);background:var(--bg);border-radius:8px;padding:6px 10px;max-width:280px;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink)}
+.tl-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-btn svg{flex:none;color:var(--muted)}
+.tl-btn:hover,.tl-btn[aria-expanded="true"]{border-color:var(--accent)}
+.tl-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:300px;max-width:calc(100vw - 32px);max-height:60vh;overflow:auto;background:var(--bg);border:1px solid var(--sky-200);border-radius:12px;box-shadow:0 12px 32px rgba(15,35,64,.18);padding:6px}
+.tl-sec{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px 4px}
+.tl-row{display:flex;align-items:center;gap:2px;border-radius:8px}
+.tl-row:hover{background:var(--sky-50)}
+.tl-row.on{background:var(--sky-100)}
+.tl-pick{flex:1;min-width:0;text-align:left;border:0;background:transparent;padding:8px 10px;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.tl-row.on .tl-pick{font-weight:600;color:var(--accent)}
+.tl-del{flex:none;border:0;background:transparent;width:30px;height:30px;border-radius:6px;cursor:pointer;color:var(--muted);display:grid;place-items:center}
+.tl-del:hover{background:#FDECEC;color:#E5484D}
 .sync{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .sync i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
 .sync.cloud i{background:var(--st-inprogress)} .sync.busy i{background:var(--st-atrisk)} .sync.local i{background:var(--st-notstarted)}
@@ -427,7 +440,7 @@ var LOGO='<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><re
 document.getElementById("app").innerHTML=
  '<header class="top"><div class="wrap top-in">'+
    '<div class="brand">'+LOGO+'<span>SDLC Timeline Planner</span></div>'+
-   '<div class="plan-pick"><select id="picker" aria-label="Your timelines"></select>'+
+   '<div class="plan-pick"><div class="tl"><button id="tl-btn" class="tl-btn" type="button" aria-haspopup="true" aria-expanded="false"><span id="tl-label"></span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="tl-menu" class="tl-menu" hidden></div></div>'+
    '<button id="btn-newplan" class="btn primary" type="button">+ New timeline</button></div>'+
    '<span id="sync" class="sync"><i></i><span></span></span>'+
  '</div></header>'+
@@ -495,19 +508,46 @@ function setSync(s){
 }
 
 /* ---------- picker ---------- */
+// the example stays in the menu unless the viewer removes it; with no timelines of their own it always shows
+var LS_HIDE_EX="sdlc-hide-example";
+function exHidden(){return lsGet(LS_HIDE_EX)==="1"&&sortedIds().length>0}
+var TRASH='<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5M7 7v4M9 7v4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function renderPicker(){
-  var ids=sortedIds(), html="";
-  ids.forEach(function(id){html+='<option value="'+id+'"'+(id===curId&&!cur().sample?" selected":"")+'>'+esc(plans[id].name||"Untitled timeline")+'</option>'});
-  // the example always stays one click away
-  var ex='<option value="example"'+(cur().sample?" selected":"")+'>'+esc(example.name)+'</option>';
-  html+=ids.length?'<optgroup label="Example">'+ex+'</optgroup>':ex;
-  var sel=$("#picker"); sel.innerHTML=html; sel.hidden=!ids.length&&cur().sample;
+  var ids=sortedIds();
+  if(cur().sample&&exHidden()){curId=ids[0];lsSet(LS_CUR,curId)}
+  $("#tl-label").textContent=cur().sample?example.name:(cur().name||"Untitled timeline");
+  var html="";
+  function row(id,name,on){return '<div class="tl-row'+(on?" on":"")+'"><button class="tl-pick" type="button" data-pick="'+id+'" title="'+esc(name)+'">'+esc(name)+'</button>'+
+    (ids.length?'<button class="tl-del" type="button" data-del="'+id+'" aria-label="Delete '+esc(name)+'" title="Delete">'+TRASH+'</button>':'')+'</div>'}
+  if(ids.length){html+='<div class="tl-sec">Your timelines</div>';ids.forEach(function(id){html+=row(id,plans[id].name||"Untitled timeline",id===curId&&!cur().sample)})}
+  if(!exHidden()){html+='<div class="tl-sec">Example</div>'+row("example",example.name,cur().sample)}
+  $("#tl-menu").innerHTML=html;
   $("#btn-delplan").hidden=cur().sample;
 }
-$("#picker").addEventListener("change",function(e){var v=e.target.value;
-  if(plans[v]){curId=v;lsSet(LS_CUR,v);renderAll()}
-  else if(v==="example"){curId=null;lsSet(LS_CUR,"example");renderAll()}
+function setMenu(open){$("#tl-menu").hidden=!open;$("#tl-btn").setAttribute("aria-expanded",open)}
+$("#tl-btn").addEventListener("click",function(e){e.stopPropagation();setMenu($("#tl-menu").hidden)});
+document.addEventListener("click",function(e){if(!$("#tl-menu").hidden&&!e.target.closest(".tl"))setMenu(false)});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("#tl-menu").hidden){setMenu(false);$("#tl-btn").focus()}});
+$("#tl-menu").addEventListener("click",function(e){
+  var pk=e.target.closest("[data-pick]"), dl=e.target.closest("[data-del]");
+  if(pk){var v=pk.dataset.pick;setMenu(false);
+    if(plans[v]){curId=v;lsSet(LS_CUR,v)}else{curId=null;lsSet(LS_CUR,"example")}
+    renderAll();return}
+  if(dl){e.stopPropagation();deletePlan(dl.dataset.del)}
 });
+function deletePlan(id){
+  if(id==="example"){
+    lsSet(LS_HIDE_EX,"1"); renderAll();
+    toast("Removed the example from your list",
+      "Undo",function(){lsSet(LS_HIDE_EX,"0");renderAll()});
+    return;
+  }
+  var snap=plans[id]; if(!snap)return;
+  delete plans[id]; removeCloud(id);
+  if(curId===id){curId=sortedIds()[0]||null;lsSet(LS_CUR,curId||"example")}
+  saveLocal(); renderAll();
+  toast("Deleted “"+(snap.name||"Untitled timeline")+"”","Undo",function(){plans[id]=snap;curId=id;saveLocal();schedule(id);renderAll()});
+}
 
 /* ---------- summary ---------- */
 function renderSummary(){
