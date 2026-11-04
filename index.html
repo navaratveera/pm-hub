@@ -64,6 +64,10 @@ main.choosing #newbox>.grow>b{font-size:16px;color:var(--accent)}
 main.choosing .choice{border-color:#A9C9F3}
 .choice b{font-size:14px}
 .choice span{font-size:12px;color:var(--muted)}
+.choice.dup{cursor:default}
+.dup-row{display:flex;gap:6px;margin-top:4px}
+.dup-row select{flex:1;min-width:0;border:1px solid var(--sky-200);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:12.5px;font-weight:500}
+.dup-row .btn{padding:6px 12px;font-size:12.5px}
 
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .stat{background:var(--bg);padding:12px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -434,6 +438,8 @@ document.getElementById("app").innerHTML=
      '<button class="choice" type="button" data-new="template"><b>SDLC template</b><span>3 swimlanes, 7 activities and 2 milestones chained by working days from next Monday.</span></button>'+
      '<button class="choice" type="button" data-new="blank"><b>Blank timeline</b><span>One empty activity. Build your own lanes from scratch.</span></button>'+
      '<label class="choice"><b>Import CSV</b><span>Columns: Lane, Project/Squad, Activity, Type, Start, End, Revised end, Status.</span><input id="csv-in" type="file" accept=".csv,text/csv" hidden></label>'+
+     '<div class="choice dup"><b>Duplicate a timeline</b><span id="dup-note">Copy one of your timelines, with its lanes, holidays and activities.</span>'+
+       '<div class="dup-row"><select id="dup-from" aria-label="Timeline to duplicate"></select><button id="btn-dup" class="btn primary" type="button">Duplicate</button></div></div>'+
    '</div></div><button id="btn-newcancel" class="btn ghost" type="button">Cancel</button></div>'+
    '<div class="title-row"><span class="eyebrow">Project timeline</span>'+
      '<input id="proj-name" class="proj-name" aria-label="Timeline name" placeholder="Name your project">'+
@@ -1064,8 +1070,23 @@ function templateItems(){
   });
   return items;
 }
+function renderDup(){
+  var ids=sortedIds(), sel=$("#dup-from"), html="";
+  ids.forEach(function(id){html+='<option value="'+id+'"'+(id===curId?" selected":"")+'>'+esc(plans[id].name||"Untitled timeline")+'</option>'});
+  html+='<option value="example"'+(ids.length?"":" selected")+'>'+esc(example.name)+'</option>';
+  sel.innerHTML=html;
+}
+$("#btn-dup").addEventListener("click",function(){
+  var v=$("#dup-from").value, src=v==="example"?example:plans[v]; if(!src)return;
+  var copy=JSON.parse(JSON.stringify(wire(src)));
+  copy.items.forEach(function(it){delete it.id});
+  var name="Copy of "+(src.name||"Untitled timeline");
+  delete copy.name; delete copy.createdAt; delete copy.updatedAt;
+  addPlan(name,copy.items,copy); toast("Duplicated “"+(src.name||"Untitled timeline")+"”");
+});
 function setNew(open){
   var nb=$("#newbox");nb.hidden=!open;$("main").classList.toggle("choosing",open);
+  if(open)renderDup();
   if(open){window.scrollTo({top:0,behavior:"smooth"});nb.querySelector(".choice").focus({preventScroll:true})}
 }
 $("#btn-newplan").addEventListener("click",function(){setNew($("#newbox").hidden)});
