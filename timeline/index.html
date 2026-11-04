@@ -1349,6 +1349,37 @@ function unpackShare(str){
   var p=kind==="z"?pipe(bytes,new DecompressionStream("deflate-raw")):Promise.resolve(bytes);
   return p.then(function(b){return JSON.parse(new TextDecoder().decode(b))});
 }
+// v2 link format: positional arrays, short item ids, dates as day offsets, lanes/squads/status as indexes
+function shortIds(p){ // give items 1–2 character ids once, so every later link is shorter (ids stay stable after that)
+  if(p.items.every(function(it){return it.id.length<=3}))return;
+  // random 3-character ids, so rows added separately by you and a friend never get the same id
+  var used={};
+  p.items.forEach(function(it){if(it.id.length<=3)used[it.id]=1});
+  p.items.forEach(function(it){if(it.id.length<=3)return;var k;do{k=Math.floor(Math.random()*46656).toString(36).padStart(3,"0")}while(used[k]);used[k]=1;it.id=k});
+}
+function packV2(p,who,at){
+  var L=p.lanes, G=p.platforms, ds=[];
+  p.items.forEach(function(it){["start","end","revEnd"].forEach(function(f){var n=toN(it[f]);if(n!=null)ds.push(n)})});
+  p.holidays.forEach(function(h){ds.push(toN(h.date))});
+  var base=ds.length?Math.min.apply(null,ds):0;
+  function d(v){var n=toN(v);return n==null?"":n-base}
+  var its=p.items.map(function(it){
+    var r=[it.id,L.indexOf(it.lane),it.group?G.indexOf(it.group):"",it.name,it.type==="milestone"?1:0,d(it.start),it.type==="milestone"?"":d(it.end),d(it.revEnd),SKEYS.indexOf(it.status)];
+    while(r.length>4&&(r[r.length-1]===""||(r.length===9&&r[8]===0)))r.pop(); // trailing blanks and "not started" are the defaults
+    return r;
+  });
+  var cols=G.map(function(g){return String((p.platformColors||{})[g]||"").replace("#","")});
+  return [2,p.id,who,Math.round(at/6e4),base,p.name,p.subtitle,["day","week","month"].indexOf(p.scale),d(p.viewFrom),d(p.viewTo),L,G,cols,
+    p.holidays.map(function(h){return[toN(h.date)-base,h.name]}),its];
+}
+function unpackV2(a){
+  var base=a[4], L=a[10], G=a[11], cols={};
+  function d(v){return v===""||v==null?"":toS(base+v)}
+  G.forEach(function(g,i){if(a[12][i])cols[g]="#"+a[12][i]});
+  return {id:a[1],by:a[2],at:a[3]*6e4,plan:{name:a[5],subtitle:a[6],scale:["day","week","month"][a[7]]||"day",viewFrom:d(a[8]),viewTo:d(a[9]),lanes:L,platforms:G,platformColors:cols,
+    holidays:a[13].map(function(h){return{date:toS(base+h[0]),name:h[1]}}),
+    items:a[14].map(function(r){return{id:r[0],lane:L[r[1]],group:r[2]===""||r[2]==null?"":G[r[2]],name:r[3],type:r[4]?"milestone":"task",start:d(r[5]),end:d(r[6]),revEnd:d(r[7]),status:SKEYS[r[8]||0]}})}};
+}
 function modal(html){
   var bg=document.createElement("div"); bg.className="modal-bg"; bg.innerHTML='<div class="modal" role="dialog" aria-modal="true">'+html+'</div>';
   document.body.appendChild(bg);
@@ -1370,9 +1401,8 @@ function shareDialog(){
     var who=nm.value.trim(); if(!who){nm.focus();nm.placeholder="Please type your name";return}
     lsSet(LS_NAME,who);
     var at=Date.now(); p.history=(p.history||[]).concat([{by:who,at:at,act:"shared"}]).slice(-30);
-    p.updatedAt=Math.max(p.updatedAt,1); saveLocal(); schedule(p.id);
-    var w=wire(p); w.items=w.items.map(function(it){var c=Object.assign({},it);delete c.edit;return c});
-    packShare({v:1,id:p.id,by:who,at:at,plan:w}).then(function(code){
+    shortIds(p); p.updatedAt=Math.max(p.updatedAt,1); saveLocal(); schedule(p.id); renderTable();
+    packShare(packV2(p,who,at)).then(function(code){
       var url=location.origin+location.pathname+"#s="+code;
       m.el.querySelector("#sh-out").hidden=false; var li=m.el.querySelector("#sh-link"); li.value=url; li.select();
       m.el.querySelector("#sh-make").textContent="Update link"; renderShareNote();
@@ -1446,7 +1476,7 @@ document.addEventListener("click",function(e){
 function readHash(){
   var m=/^#s=([A-Za-z0-9_\-]+)$/.exec(location.hash||""); if(!m)return;
   history.replaceState(null,"",location.pathname+location.search);
-  unpackShare(m[1]).then(function(obj){if(obj&&obj.plan&&obj.id)receive(obj)}).catch(function(){toast("That share link looks incomplete. Ask for it again.")});
+  unpackShare(m[1]).then(function(obj){if(Array.isArray(obj)&&obj[0]===2)obj=unpackV2(obj);if(obj&&obj.plan&&obj.id)receive(obj)}).catch(function(){toast("That share link looks incomplete. Ask for it again.")});
 }
 window.addEventListener("hashchange",readHash);
 
