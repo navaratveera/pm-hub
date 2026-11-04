@@ -1,0 +1,20 @@
+{
+  "tools": [
+    {
+      "id": "timeline",
+      "name": "Timeline Planner",
+      "icon": "timeline",
+      "path": "timeline/",
+      "status": "live",
+      "description": "Enter start and end dates for each SDLC activity and get a slide-ready Gantt timeline with swimlanes, holidays, milestones and status colors."
+    },
+    {
+      "id": "wbs",
+      "name": "Work Breakdown Structure",
+      "icon": "wbs",
+      "path": "wbs/",
+      "status": "soon",
+      "description": "Break a project into deliverables and work packages with automatic numbering, effort roll-up and a tree chart. Send work packages straight to the Timeline."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+/* PM Hub shared theme: white page, light-blue header band. Every tool links this file. */
+:root{
+  color-scheme:light;
+  --bg:#FFFFFF; --sky-50:#F5F9FF; --sky-100:#EAF3FE; --sky-200:#D3E5FB; --line:#DCE7F5; --line-soft:#EDF3FB;
+  --ink:#0F2340; --muted:#5B6E88; --accent:#1C6FE0; --accent-ink:#FFFFFF;
+  --st-notstarted:#3D8FE6; --st-inprogress:#22A55B; --st-atrisk:#F2BE2C; --st-blocker:#E5484D; --st-done:#A9B3C1;
+  --f-ui:"Plus Jakarta Sans","IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+.wrap{width:100%;max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header + footer (drawn by nav.js) */
+.hub-top{position:sticky;top:0;z-index:20;background:var(--sky-100);border-bottom:1px solid var(--sky-200)}
+.hub-top-in{display:flex;align-items:center;gap:8px 20px;flex-wrap:wrap;padding-block:12px}
+.hub-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--ink);text-decoration:none;margin-right:auto}
+.hub-nav{display:flex;gap:4px;flex-wrap:wrap}
+.hub-nav a{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+.hub-nav a:hover{background:var(--bg);color:var(--accent)}
+.hub-nav a[aria-current="page"]{background:var(--bg);color:var(--accent);box-shadow:inset 0 0 0 1px var(--sky-200)}
+.hub-foot{margin-top:auto;padding:24px 0 28px;text-align:center;font-size:12px;color:var(--muted)}
+.hub-foot b{color:var(--accent);font-weight:600}
+
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--sky-200);background:var(--bg);border-radius:8px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:#155BBE;color:var(--accent-ink)}
