@@ -82,6 +82,18 @@ main{display:flex;flex-direction:column;gap:20px;padding-block:24px 56px}
 .changes .k{display:inline-block;min-width:66px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .changes .k.add{color:#16793F}.changes .k.del{color:#B4232A}.changes .k.chg{color:#8A5A00}
 .share-note{margin:0 0 12px}
+.live-bar{margin:0 0 12px;background:#F2FBF5;border-color:#BFE6CC}
+.live-bar.off{background:#FFF8E5;border-color:#F2D58A}
+.live-bar .dot{width:9px;height:9px;border-radius:50%;background:#22A55B;display:inline-block;margin-right:6px;box-shadow:0 0 0 3px rgba(34,165,91,.18)}
+.live-bar.off .dot{background:#C98A00;box-shadow:0 0 0 3px rgba(201,138,0,.18)}
+.peer{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--sky-200);background:var(--bg);border-radius:999px;padding:1px 9px 1px 3px;font-size:12px;margin:2px 4px 2px 0}
+.peer i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700;font-style:normal}
+.peer small{color:var(--muted)}
+.ro-note{font-size:12px;color:#8A5A00;font-weight:600}
+.live-sec{border:1px solid #BFE6CC;background:#F2FBF5;border-radius:12px;padding:12px 14px;margin:8px 0 14px}
+.live-sec b{font-size:14px}
+.live-sec .linkbox{margin-top:4px}
+.live-sec label{margin-top:8px}
 .share-note b{color:var(--ink)}
 .share-note .hist{color:var(--muted);font-size:12px}
 tr.edited td:first-child{box-shadow:inset 3px 0 0 #F2BE2C}
@@ -133,6 +145,8 @@ main.choosing .choice{border-color:#A9C9F3}
 .date-in:disabled{cursor:default;background-image:none}
 .date-in.open{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--sky-200)}
 .field .date-in{width:132px}
+.field.check{cursor:pointer;user-select:none;color:var(--ink)}
+.field.check input{width:15px;height:15px;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}
 .picker{position:fixed;z-index:80;background:var(--bg);border:1px solid var(--sky-200);border-radius:12px;box-shadow:0 12px 32px rgba(15,35,64,.18);padding:12px;width:292px;font-family:var(--f-ui)}
 .pk-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
 .pk-head b{font-size:14px}
@@ -379,10 +393,11 @@ function normPlan(p){
   if(!lanes.length)lanes.push("General");
   return fixColors({id:String(p.id||uid()),name:String(p.name||"Untitled timeline"),subtitle:String(p.subtitle||""),sample:!!p.sample,
     holidays:(Array.isArray(p.holidays)?p.holidays:[]).filter(function(h){return h&&toN(h.date)!=null}).map(function(h){return{date:h.date,name:String(h.name||"Holiday")}}),
-    viewFrom:toN(p.viewFrom)!=null?p.viewFrom:"",viewTo:toN(p.viewTo)!=null?p.viewTo:"",scale:SCALES[p.scale]?p.scale:"day",
+    viewFrom:toN(p.viewFrom)!=null?p.viewFrom:"",viewTo:toN(p.viewTo)!=null?p.viewTo:"",scale:SCALES[p.scale]?p.scale:"day",showToday:p.showToday!==false,
     lanes:lanes,platforms:nameList(p.platforms,items.map(function(it){return it.group})),platformColors:p.platformColors,
     items:items,createdAt:+p.createdAt||Date.now(),updatedAt:+p.updatedAt||0,
-    history:(Array.isArray(p.history)?p.history:[]).filter(function(h){return h&&h.by}).slice(-30)});
+    history:(Array.isArray(p.history)?p.history:[]).filter(function(h){return h&&h.by}).slice(-30),
+    live:p.live&&p.live.room&&p.live.token?{room:String(p.live.room),token:String(p.live.token),view:p.live.view?String(p.live.view):"",role:p.live.role==="view"?"view":"edit"}:undefined});
 }
 // squad colors: every project/squad keeps its own color; new ones take the next unused palette color
 var SQUAD_COLORS=["#7C5CDB","#0E9F9A","#E07B39","#D6458B","#4F6BD8","#8A9A2B","#A0673A","#1F9BD1","#B5446E","#5E8C61"];
@@ -409,7 +424,7 @@ var example=freshExample();
 function cur(){return (curId&&plans[curId])||example}
 function sortedIds(){return Object.keys(plans).sort(function(a,b){return plans[b].updatedAt-plans[a].updatedAt})}
 function saveLocal(){lsSet(LS_PLANS,JSON.stringify(plans));if(curId)lsSet(LS_CUR,curId)}
-function wire(p){return{name:p.name,subtitle:p.subtitle,holidays:p.holidays,viewFrom:p.viewFrom,viewTo:p.viewTo,scale:p.scale,lanes:p.lanes,platforms:p.platforms,platformColors:p.platformColors,items:p.items,createdAt:p.createdAt,updatedAt:p.updatedAt,history:p.history}}
+function wire(p){return{name:p.name,subtitle:p.subtitle,holidays:p.holidays,viewFrom:p.viewFrom,viewTo:p.viewTo,scale:p.scale,showToday:p.showToday,lanes:p.lanes,platforms:p.platforms,platformColors:p.platformColors,items:p.items,createdAt:p.createdAt,updatedAt:p.updatedAt,history:p.history,live:p.live}}
 
 var timers={}, inflight={}, again={};
 function schedule(id){if(mode!=="cloud")return;clearTimeout(timers[id]);timers[id]=setTimeout(function(){flush(id)},800)}
@@ -437,7 +452,7 @@ function touch(opts){
     p.sample=false; p.id=uid(); p.createdAt=Date.now(); plans[p.id]=p; curId=p.id;
     example=freshExample(); renderPicker(); $("#sample-note").hidden=true;
   }
-  p.updatedAt=Date.now(); saveLocal(); schedule(p.id);
+  p.updatedAt=Date.now(); saveLocal(); schedule(p.id); liveQueue();
   if(!(opts&&opts.quiet)){renderSummary();renderChart()}
 }
 
@@ -484,6 +499,7 @@ document.getElementById("app").innerHTML=
      '<input id="proj-name" class="proj-name" aria-label="Timeline name" placeholder="Name your project">'+
      '<input id="proj-sub" class="proj-sub" aria-label="Subtitle" placeholder="Add a subtitle (shown on the chart)">'+
      '<span id="sub" class="sub"></span></div>'+
+   '<div id="live-bar" class="note live-bar" hidden></div>'+
    '<div id="share-note" class="note share-note" hidden></div>'+
    '<div id="sample-note" class="note" hidden><span class="grow"><b>This is an example.</b> Edit any row and it becomes your own timeline, or start fresh from the SDLC template.</span><button class="btn" type="button" data-new="template">Use SDLC template</button></div>'+
    '<section id="summary" class="summary" aria-label="Project summary"></section>'+
@@ -493,6 +509,7 @@ document.getElementById("app").innerHTML=
          '<div class="seg" role="group" aria-label="Timeline scale">'+Object.keys(SCALES).map(function(k){return '<button type="button" data-scale="'+k+'">'+SCALES[k].label+'</button>'}).join("")+'</div>'+
          '<label class="field">From <input id="view-from" type="text" class="date-in" placeholder="dd/mm/yyyy" autocomplete="off"></label>'+
          '<label class="field">To <input id="view-to" type="text" class="date-in" placeholder="dd/mm/yyyy" autocomplete="off"></label>'+
+         '<label class="field check"><input id="show-today" type="checkbox"> Today</label>'+
          '<button id="btn-png" class="btn primary" type="button">Export PNG</button>'+
        '</div></div>'+
      '<div class="chart-scroll" id="chart-wrap"><div id="chart"></div></div>'+
@@ -828,7 +845,7 @@ function buildChart(p,availW,padR){
     o.push('</g>');
   })})});
   // today
-  if(t>=from&&t<=to){
+  if(p.showToday!==false&&t>=from&&t<=to){
     var tc=scale!=="month"&&isWE(t)?xs(t):(xs(t)+xe(t))/2;
     o.push('<line x1="'+tc+'" y1="'+(HY+WK)+'" x2="'+tc+'" y2="'+BOT+'" stroke="'+C.today+'" stroke-width="1.75" stroke-dasharray="6 4"/>');
     o.push('<rect x="'+(tc-22)+'" y="'+(HY+WK-13)+'" width="44" height="13" rx="3" fill="'+C.today+'"/><text x="'+tc+'" y="'+(HY+WK-3.5)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#FFFFFF" letter-spacing=".5">TODAY</text>');
@@ -841,11 +858,13 @@ function renderChart(){
   var wrap=$("#chart-wrap"), html=buildChart(cur(),Math.max(320,wrap.clientWidth-24));
   $("#chart").innerHTML=html||'<div class="empty">Add a start and end date to an activity below and the timeline builds itself.</div>';
   $("#view-from").value=dmy(cur().viewFrom); $("#view-to").value=dmy(cur().viewTo);
+  $("#show-today").checked=cur().showToday!==false;
   document.querySelectorAll("[data-scale]").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.scale===cur().scale))});
 }
 document.querySelectorAll("[data-scale]").forEach(function(b){b.addEventListener("click",function(){
   if(cur().scale===b.dataset.scale)return; cur().scale=b.dataset.scale; touch();
 })});
+$("#show-today").addEventListener("change",function(){cur().showToday=this.checked;touch()});
 $("#chart").addEventListener("click",function(e){
   var g=e.target.closest("[data-go]"); if(!g)return;
   var tr=document.querySelector('tr[data-id="'+g.getAttribute("data-go")+'"]'); if(!tr)return;
@@ -952,7 +971,7 @@ function sqStyle(name){var c=sqColor(name);return c?' style="--c:'+c+';--t:'+tin
 function renderTable(){
   var p=cur(), H=holSet(p);
   $("#tbody").innerHTML=p.items.map(function(it){return rowHTML(it,H)}).join("");
-  fitTable();
+  fitTable(); applyRO();
 }
 var TABLE_W=1240;
 function fitTable(){
@@ -1370,13 +1389,13 @@ function packV2(p,who,at){
   });
   var cols=G.map(function(g){return String((p.platformColors||{})[g]||"").replace("#","")});
   return [2,p.id,who,Math.round(at/6e4),base,p.name,p.subtitle,["day","week","month"].indexOf(p.scale),d(p.viewFrom),d(p.viewTo),L,G,cols,
-    p.holidays.map(function(h){return[toN(h.date)-base,h.name]}),its];
+    p.holidays.map(function(h){return[toN(h.date)-base,h.name]}),its].concat(p.showToday===false?[1]:[]);
 }
 function unpackV2(a){
   var base=a[4], L=a[10], G=a[11], cols={};
   function d(v){return v===""||v==null?"":toS(base+v)}
   G.forEach(function(g,i){if(a[12][i])cols[g]="#"+a[12][i]});
-  return {id:a[1],by:a[2],at:a[3]*6e4,plan:{name:a[5],subtitle:a[6],scale:["day","week","month"][a[7]]||"day",viewFrom:d(a[8]),viewTo:d(a[9]),lanes:L,platforms:G,platformColors:cols,
+  return {id:a[1],by:a[2],at:a[3]*6e4,plan:{name:a[5],subtitle:a[6],scale:["day","week","month"][a[7]]||"day",showToday:a[15]!==1,viewFrom:d(a[8]),viewTo:d(a[9]),lanes:L,platforms:G,platformColors:cols,
     holidays:a[13].map(function(h){return{date:toS(base+h[0]),name:h[1]}}),
     items:a[14].map(function(r){return{id:r[0],lane:L[r[1]],group:r[2]===""||r[2]==null?"":G[r[2]],name:r[3],type:r[4]?"milestone":"task",start:d(r[5]),end:d(r[6]),revEnd:d(r[7]),status:SKEYS[r[8]||0]}})}};
 }
@@ -1392,11 +1411,14 @@ function modal(html){
 function shareDialog(){
   if(cur().sample){touch({quiet:true});renderPicker();renderShareNote()} // sharing the example makes it your own first
   var p=cur();
-  var m=modal('<h3>Share “'+esc(p.name)+'”</h3><p>Anyone with the link can open a copy of this timeline. If they edit it, they press Share and send their link back to you: you will see exactly what they changed.</p>'+
-    '<label for="sh-name">Your name (shown to the person you send it to)</label><input type="text" id="sh-name" value="'+esc(myName())+'" placeholder="e.g. May" maxlength="40" autocomplete="name">'+
+  var m=modal('<h3>Share “'+esc(p.name)+'”</h3>'+
+    '<label for="sh-name">Your name (shown to others)</label><input type="text" id="sh-name" value="'+esc(myName())+'" placeholder="e.g. May" maxlength="40" autocomplete="name">'+
+    (LIVE_API?'<div class="live-sec" id="live-sec"></div>':'')+
+    '<b style="font-size:14px">Snapshot link</b><p style="margin:2px 0 0">A copy of the timeline as it is now. Changes are not live: they send their link back and you see what they changed.</p>'+
     '<div id="sh-out" hidden><label>Link</label><div class="linkbox"><input type="text" id="sh-link" readonly><button class="btn primary" type="button" id="sh-copy">Copy</button></div><p style="margin-top:8px">The link holds the timeline itself, so it changes whenever the timeline changes. Share again after edits.</p></div>'+
-    '<div class="row"><button class="btn" type="button" data-close>Close</button><button class="btn primary" type="button" id="sh-make">Create link</button></div>');
+    '<div class="row"><button class="btn" type="button" data-close>Close</button><button class="btn" type="button" id="sh-make">Create snapshot link</button></div>');
   var nm=m.el.querySelector("#sh-name"); nm.focus();
+  if(LIVE_API)drawLiveSec(m,p,nm);
   function make(){
     var who=nm.value.trim(); if(!who){nm.focus();nm.placeholder="Please type your name";return}
     lsSet(LS_NAME,who);
@@ -1474,16 +1496,165 @@ document.addEventListener("click",function(e){
   if(e.target.closest("#btn-seen")){cur().items.forEach(function(it){delete it.edit});touch({quiet:true});renderTable();renderShareNote()}
 });
 function readHash(){
+  var lv=/^#live=([A-Za-z0-9_\-]{8,24})\.([A-Za-z0-9_\-]{8,40})$/.exec(location.hash||"");
+  if(lv){history.replaceState(null,"",location.pathname+location.search);joinLive(lv[1],lv[2]);return}
   var m=/^#s=([A-Za-z0-9_\-]+)$/.exec(location.hash||""); if(!m)return;
   history.replaceState(null,"",location.pathname+location.search);
   unpackShare(m[1]).then(function(obj){if(Array.isArray(obj)&&obj[0]===2)obj=unpackV2(obj);if(obj&&obj.plan&&obj.id)receive(obj)}).catch(function(){toast("That share link looks incomplete. Ask for it again.")});
 }
 window.addEventListener("hashchange",readHash);
 
+/* ---------- live timelines (real time) ----------
+   A live timeline lives in a room on the PM Hub server (Cloudflare Durable Object).
+   Edit links can change it, view links only watch. Every local edit is sent as a small patch
+   (changed rows, removed rows, order, names/holidays); other people's patches are applied as they arrive. */
+var LIVE_API=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)?"http://127.0.0.1:8787":(IN_HUB?"":"");
+var LIVE_META=["name","subtitle","holidays","lanes","platforms","platformColors"];
+var live={ws:null,room:null,base:null,peers:[],me:null,status:"off",retry:0,timer:null,ping:null,planId:null};
+function liveUrl(p,role){var tk=role==="view"?p.live.view:p.live.token;return location.origin+location.pathname+"#live="+p.live.room+"."+tk}
+function strip(it){var c=Object.assign({},it);delete c.edit;return JSON.stringify(c)}
+function snap(p){var s={items:{},order:p.items.map(function(it){return it.id}),meta:{}};p.items.forEach(function(it){s.items[it.id]=strip(it)});LIVE_META.forEach(function(k){s.meta[k]=JSON.stringify(p[k]==null?null:p[k])});return s}
+function diffSnap(b,p){
+  var out={items:[],del:[],order:null,meta:null}, ids={};
+  p.items.forEach(function(it){ids[it.id]=1;if(b.items[it.id]!==strip(it)){var c=Object.assign({},it);delete c.edit;out.items.push(c)}});
+  Object.keys(b.items).forEach(function(id){if(!ids[id])out.del.push(id)});
+  var ord=p.items.map(function(it){return it.id});if(ord.join()!==b.order.join())out.order=ord;
+  LIVE_META.forEach(function(k){if(JSON.stringify(p[k]==null?null:p[k])!==b.meta[k]){out.meta=out.meta||{};out.meta[k]=p[k]}});
+  return (out.items.length||out.del.length||out.order||out.meta)?out:null;
+}
+function livePlan(){var p=cur();return p&&p.live&&!p.sample?p:null}
+function liveSync(){ // connect to the current timeline's room, or leave when another timeline is opened
+  var p=livePlan();
+  if(!LIVE_API||!p){if(live.ws)liveClose();return}
+  if(live.ws&&live.room===p.live.room)return;
+  if(live.ws)liveClose();
+  liveOpen(p);
+}
+function liveOpen(p){
+  live.room=p.live.room; live.planId=p.id; live.status="connecting"; renderLiveBar();
+  var ws; try{ws=new WebSocket(LIVE_API.replace(/^http/,"ws")+"/api/ws/"+p.live.room+"?t="+encodeURIComponent(p.live.token)+"&name="+encodeURIComponent(myName()||"Guest"))}catch(e){liveRetry();return}
+  live.ws=ws;
+  ws.onmessage=function(e){var m;try{m=JSON.parse(e.data)}catch(x){return}liveMsg(m)};
+  ws.onclose=function(e){if(live.ws!==ws)return;live.ws=null;clearInterval(live.ping);
+    if(e.code===4404||e.code===4403){live.status="gone";renderLiveBar();return}
+    liveRetry()};
+  ws.onerror=function(){};
+}
+function liveClose(){var ws=live.ws;live.ws=null;live.room=null;live.base=null;live.peers=[];live.status="off";clearTimeout(live.timer);clearInterval(live.ping);if(ws)try{ws.close()}catch(e){}}
+function liveRetry(){live.status="offline";renderLiveBar();clearTimeout(live.retryT);var d=Math.min(15000,1000*Math.pow(2,live.retry++));live.retryT=setTimeout(function(){var p=livePlan();if(p&&!live.ws&&p.live.room===live.room)liveOpen(p)},d)}
+function liveMsg(m){
+  var p=plans[live.planId]; if(!p)return;
+  if(m.type==="init"){
+    live.retry=0; live.status="live"; live.me=m.me; live.peers=m.peers||[];
+    p.live.role=m.role; if(m.view)p.live.view=m.view;
+    var pending=live.base?diffSnap(live.base,p):null; // edits made while offline
+    var np=normPlan(Object.assign({},m.plan,{id:p.id,live:p.live,history:p.history,createdAt:p.createdAt,updatedAt:Date.now(),scale:p.scale,showToday:p.showToday,viewFrom:p.viewFrom,viewTo:p.viewTo}));
+    if(!np.name||np.name==="Untitled timeline")np.name=m.plan.name||p.name;
+    plans[p.id]=np; live.base=snap(np);
+    if(pending&&m.role==="edit"){applyPatch(np,pending,null);liveSend(true)}
+    saveLocal(); keepFocus(renderAll);
+    clearInterval(live.ping); live.ping=setInterval(function(){if(live.ws&&live.ws.readyState===1)live.ws.send('{"type":"ping"}')},25000);
+    return;
+  }
+  if(m.type==="peers"){live.peers=m.peers||[];renderLiveBar();return}
+  if(m.type==="patch"){
+    liveSend(true); // send my own unsent edits first so they are not lost
+    applyPatch(p,m.patch,m.by); live.base=snap(p); p.updatedAt=Date.now(); saveLocal();
+    keepFocus(function(){renderAll()});
+    return;
+  }
+  if(m.type==="error"){toast(m.message||"Live update failed")}
+}
+function applyPatch(p,pt,by){
+  var byId={}; p.items.forEach(function(it){byId[it.id]=it});
+  (pt.items||[]).forEach(function(it){var n=normItem(it);if(by&&!n.edit)n.edit={by:by,at:Date.now(),what:""};if(byId[n.id])Object.assign(byId[n.id],n);else{p.items.push(n);byId[n.id]=n}});
+  if(pt.del&&pt.del.length){var g={};pt.del.forEach(function(id){g[id]=1});p.items=p.items.filter(function(it){return !g[it.id]})}
+  if(pt.order){var pos={};pt.order.forEach(function(id,i){pos[id]=i});p.items.sort(function(a,b){return (pos[a.id]!=null?pos[a.id]:1e9)-(pos[b.id]!=null?pos[b.id]:1e9)})}
+  if(pt.meta)LIVE_META.forEach(function(k){if(k in pt.meta)p[k]=pt.meta[k]});
+  var np=normPlan(p); p.lanes=np.lanes; p.platforms=np.platforms; p.platformColors=np.platformColors; p.holidays=np.holidays;
+}
+function liveQueue(){var p=livePlan();if(!p||!live.ws||p.live.role!=="edit")return;clearTimeout(live.timer);live.timer=setTimeout(function(){liveSend(false)},250)}
+function liveSend(now){
+  clearTimeout(live.timer);
+  var p=plans[live.planId]; if(!p||!live.base||!live.ws||live.ws.readyState!==1||p.live.role!=="edit")return;
+  var pt=diffSnap(live.base,p); if(!pt)return;
+  live.ws.send(JSON.stringify({type:"patch",patch:pt})); live.base=snap(p);
+}
+// redraws keep the cursor where it was, so a teammate's edit never interrupts typing
+function keepFocus(fn){
+  var a=document.activeElement, id=a&&a.id, s=null, e=null;
+  try{if(a&&a.selectionStart!=null){s=a.selectionStart;e=a.selectionEnd}}catch(x){}
+  fn();
+  if(id){var n=document.getElementById(id);if(n&&n!==document.activeElement){n.focus({preventScroll:true});try{if(s!=null)n.setSelectionRange(s,e)}catch(x){}}}
+}
+var PEER_COL=["#1C6FE0","#22A55B","#7C5CDB","#E07B39","#D6458B","#0E9F9A","#B5446E","#4F6BD8"];
+function renderLiveBar(){
+  var el=$("#live-bar"); if(!el)return; var p=livePlan();
+  if(!p||!LIVE_API){el.hidden=true;return}
+  var st=live.status, ro=p.live.role==="view";
+  var head=st==="live"?'<span class="dot"></span><b>Live</b>':st==="gone"?'<span class="dot"></span><b>This live link no longer works</b>':'<span class="dot"></span><b>'+(st==="connecting"?"Connecting…":"Offline: reconnecting")+'</b>'+(ro?"":' · your edits are kept and sent when the connection is back');
+  var seen={}, peers=live.peers.filter(function(x){if(seen[x.id])return false;seen[x.id]=1;return true});
+  var list=peers.map(function(x,i){var mine=x.id===live.me;return '<span class="peer"><i style="background:'+PEER_COL[i%PEER_COL.length]+'">'+esc((x.name||"?").charAt(0).toUpperCase())+'</i>'+esc(x.name)+(mine?' <small>(you)</small>':'')+' <small>'+(x.role==="view"?"viewing":"editing")+'</small></span>'}).join("");
+  el.className="note live-bar"+(st==="live"?"":" off");
+  el.innerHTML='<span class="grow">'+head+(st==="live"?' · '+peers.length+' here now'+(ro?' · <span class="ro-note">View only: you can look, but not change it</span>':''):'')+(list?'<br>'+list:'')+'</span>'+(ro?'':'<button class="btn" type="button" data-share>Invite</button>');
+  el.hidden=false;
+}
+// view-only links: everything that would change the timeline is switched off (the chart view controls still work)
+function applyRO(){
+  var p=livePlan(), ro=!!(p&&p.live.role==="view");
+  document.body.classList.toggle("ro",ro);
+  var sel="#tbody input,#tbody select,#tbody button,#structure input,#structure button,#structure select,#hol-from,#hol-to,#hol-name,#btn-hol,#th-year,#btn-thai,#hol-list button,#btn-add,#btn-sort,#btn-shift,#shift-n,#proj-name,#proj-sub,#btn-delplan,#btn-share";
+  document.querySelectorAll(sel).forEach(function(x){if(ro){if(!x.disabled){x.dataset.ro="1";x.disabled=true}}else if(x.dataset.ro){x.disabled=false;delete x.dataset.ro}});
+  var share=$("#btn-share");if(share)share.hidden=ro;
+}
+function drawLiveSec(m,p,nm){
+  var box=m.el.querySelector("#live-sec");
+  function draw(){
+    var q=cur();
+    if(q.live&&q.live.role==="edit"){
+      box.innerHTML='<b>● Live links (real time)</b><p style="margin:2px 0 6px">Everyone with a link sees changes as they happen.</p>'+
+        '<label>Can edit</label><div class="linkbox"><input type="text" readonly value="'+esc(liveUrl(q,"edit"))+'"><button class="btn primary" type="button" data-cp>Copy</button></div>'+
+        (q.live.view?'<label>View only (e.g. for your manager)</label><div class="linkbox"><input type="text" readonly value="'+esc(liveUrl(q,"view"))+'"><button class="btn" type="button" data-cp>Copy</button></div>':'');
+    }else if(q.live){box.innerHTML='<b>● Live (view only)</b><p style="margin:2px 0 0">You opened a view-only link, so you cannot invite others.</p>'}
+    else{
+      box.innerHTML='<b>● Live links (real time)</b><p style="margin:2px 0 8px">Put this timeline online so others can edit or watch it with you as it changes. It is stored on the PM Hub server; anyone with a link can open it.</p><button class="btn primary" type="button" id="lv-make">Create live links</button>';
+      box.querySelector("#lv-make").addEventListener("click",function(){
+        var who=nm.value.trim(); if(!who){nm.focus();nm.placeholder="Please type your name";return}
+        lsSet(LS_NAME,who); var b=this; b.disabled=true; b.textContent="Creating…";
+        var w=wire(q); delete w.live; delete w.history; w.items=w.items.map(function(it){var c=Object.assign({},it);delete c.edit;return c});
+        fetch(LIVE_API+"/api/new",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({by:who,plan:w})})
+          .then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})
+          .then(function(d){q.live={room:d.room,token:d.edit,view:d.view,role:"edit"};q.history=(q.history||[]).concat([{by:who,at:Date.now(),act:"shared"}]);saveLocal();schedule(q.id);live.base=snap(q);renderAll();draw()})
+          .catch(function(){b.disabled=false;b.textContent="Create live links";toast("Could not reach the PM Hub server. Try again in a moment.")});
+      });
+    }
+    box.querySelectorAll("[data-cp]").forEach(function(btn){btn.addEventListener("click",function(){var i=btn.previousElementSibling;(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(function(){btn.textContent="Copied ✓"},function(){i.select();document.execCommand&&document.execCommand("copy");btn.textContent="Copied ✓"})})});
+  }
+  draw();
+}
+function askName(then){
+  if(myName()){then();return}
+  var m=modal('<h3>What is your name?</h3><p>Others in this live timeline will see it next to your edits.</p><input type="text" id="nm-in" maxlength="40" placeholder="e.g. Ploy" autocomplete="name"><div class="row"><button class="btn primary" type="button" id="nm-ok">Join</button></div>');
+  var i=m.el.querySelector("#nm-in"); i.focus();
+  function ok(){var v=i.value.trim();if(!v){i.focus();return}lsSet(LS_NAME,v);m.close();then()}
+  m.el.querySelector("#nm-ok").addEventListener("click",ok); i.addEventListener("keydown",function(e){if(e.key==="Enter")ok()});
+}
+function joinLive(room,tok){
+  if(!LIVE_API){toast("Live timelines are not available here");return}
+  askName(function(){
+    var mine=null; Object.keys(plans).forEach(function(id){var q=plans[id];if(q.live&&q.live.room===room)mine=q});
+    if(mine){ if(mine.live.token!==tok&&mine.live.role==="view"){mine.live.token=tok;mine.live.role="edit"} } // an edit link upgrades a view-only copy
+    else{mine=normPlan({id:"lv"+room,name:"Live timeline",items:[],live:{room:room,token:tok,role:"edit"},createdAt:Date.now(),updatedAt:Date.now()});plans[mine.id]=mine}
+    if(live.ws&&live.room===room&&mine.live.token!==tok)liveClose();
+    curId=mine.id; lsSet(LS_CUR,curId); saveLocal(); renderAll();
+  });
+}
+
 /* ---------- boot ---------- */
 function renderAll(){
   pn.value=cur().name; ps.value=cur().subtitle; $("#sample-note").hidden=!cur().sample; renderShareNote();
   renderPicker(); renderStructure(); renderTable(); renderHolidays(); renderSummary(); lastW=$("#chart-wrap").clientWidth; renderChart(); setSync(syncState);
+  liveSync(); renderLiveBar(); applyRO();
 }
 renderAll();
 connect();
@@ -1498,6 +1669,5 @@ if(window.claude&&typeof window.claude.use==="function")window.claude.use("downl
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(renderChart);
 })();
 </script>
-
 </body>
 </html>
