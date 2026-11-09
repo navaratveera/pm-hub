@@ -32,15 +32,15 @@ header .wrap{display:flex;align-items:center;gap:12px;min-height:58px;flex-wrap:
 .btn.small{padding:4px 10px;font-size:12px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 
-.head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:26px 0 16px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:16px 0 10px}
 .head-l{min-width:0;flex:1}
-.eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-h1{margin:3px 0 0;font-size:22px;line-height:1.25;letter-spacing:-.015em;font-weight:700}
-.asof{color:var(--muted);font-size:12.5px;margin-top:2px}
+.eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{margin:2px 0 0;font-size:19px;line-height:1.25;letter-spacing:-.015em;font-weight:700}
+.asof{color:var(--muted);font-size:12px;margin-top:1px}
 .head-r{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
-.head-r .btn{min-height:38px;white-space:nowrap}
+.head-r .btn{min-height:34px;padding-top:5px;padding-bottom:5px;white-space:nowrap}
 .sw{position:relative;min-width:0;width:320px;max-width:100%}
-.sw-btn{display:flex;align-items:center;gap:9px;width:100%;background:#fff;border:1px solid var(--field);border-radius:8px;padding:0 11px;cursor:pointer;text-align:left;min-height:38px}
+.sw-btn{display:flex;align-items:center;gap:9px;width:100%;background:#fff;border:1px solid var(--field);border-radius:8px;padding:0 11px;cursor:pointer;text-align:left;min-height:34px}
 .sw-btn:hover,.sw-btn[aria-expanded="true"]{border-color:var(--field-hover)}
 .sw-btn[aria-expanded="true"]{box-shadow:0 0 0 2px rgba(28,111,224,.14)}
 .sw-cap{flex:none;font-size:11px;font-weight:600;color:var(--muted);padding-right:9px;border-right:1px solid var(--line);line-height:18px}
@@ -70,24 +70,24 @@ h1{margin:3px 0 0;font-size:22px;line-height:1.25;letter-spacing:-.015em;font-we
 .nomatch{padding:28px 16px;text-align:center;color:var(--muted)}
 
 .stats{display:grid;grid-template-columns:1.4fr repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.stat{background:#fff;border:0;padding:13px 16px;text-align:left;min-width:0;position:relative}
+.stat{background:#fff;border:0;padding:8px 14px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:7px;text-align:left;min-width:0;position:relative}
 button.stat{cursor:pointer}
 button.stat:hover{background:var(--sky-50)}
 button.stat[aria-pressed="true"]{background:var(--sky-50)}
 button.stat[aria-pressed="true"]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent)}
-.stat b{display:block;font-size:22px;line-height:1.2;font-weight:700;font-variant-numeric:tabular-nums}
-.stat span{font-size:12px;color:var(--muted)}
+.stat b{display:block;font-size:17px;line-height:1.3;font-weight:700;font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--muted);min-width:0}
 .stat.late.has b{color:var(--late)}
-.ptrack{height:4px;border-radius:2px;background:var(--sky-100);margin-top:7px;overflow:hidden}
+.ptrack{flex-basis:100%;height:3px;border-radius:2px;background:var(--sky-100);margin-top:4px;overflow:hidden}
 .ptrack i{display:block;height:100%;background:var(--accent)}
 
-.bar-f{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 10px}
+.bar-f{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
 .flabel{font-size:12px;color:var(--muted);font-weight:600;margin-right:2px}
 .chips{display:flex;gap:4px;flex-wrap:wrap}
-.chip{border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--muted)}
+.chip{border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:11.5px;font-weight:600;cursor:pointer;background:#fff;color:var(--muted)}
 .chip:hover{border-color:var(--sky-200);color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
-#q{margin-left:auto;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff;width:220px;max-width:100%}
+#q{margin-left:auto;border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12.5px;background:#fff;width:220px;max-width:100%}
 .clear{border:0;background:none;color:var(--accent-dark);font-weight:600;cursor:pointer;font-size:12px}
 
 /* quiet colour: a dot carries the meaning, the text stays readable */
@@ -97,7 +97,7 @@ button.stat[aria-pressed="true"]::after{content:"";position:absolute;left:0;righ
 .group{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
 .gtype{font-size:10px;font-weight:700;letter-spacing:.05em;color:#8A6500;background:#FBF3D9;border-radius:4px;padding:1px 6px;white-space:nowrap}
 .notes b{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
-.notes{padding:10px 15px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);white-space:pre-wrap}
+.notes{padding:7px 15px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);white-space:pre-wrap}
 .tscroll{overflow:auto}
 .tscroll thead th{position:sticky;top:0;z-index:2;background:#fff;box-shadow:inset 0 -1px 0 var(--line)}
 table{border-collapse:collapse;width:100%;min-width:1200px}
@@ -212,7 +212,7 @@ function example(){
    ["In Progress",60,-28,5],["At Risk",30,-5,6],["Delay",10,-6,-2],["Not Start",0,7,17],["Not Start",0,18,31],["Not Start",0,null,null],
    ["Not Start",0,32,36],["Not Start",0,37,38],["Not Start",0,39,39],["Not Start",0,40,54],["Not Start",0,40,70],["Not Start",0,71,75]];
   var notes={5:"Covered by the architecture review",7:"Only one reviewer available this sprint",8:"Waiting for the non-prod environment",11:"Date to be confirmed with the security team"};
-  return{id:nid(),example:true,type:"project",tag:"Example",name:"Example: Customer Portal",notes:"This example shows how to fill in each field. Change anything to try it, or delete it with Edit.",
+  return{id:nid(),example:true,type:"project",tag:"Example",name:"Example: Customer Portal",notes:"",
     acts:TEMPLATE.map(function(t,i){var f=fill[i],a=A(t[0],t[1],f[0],f[1],f[2]==null?"":shift(f[2]),f[3]==null?"":shift(f[3]),t[2]);a.remarks=notes[i]||"";return a})};
 }
 function starter(){var e=example();return{current:e.id,projects:[e]}}
@@ -296,7 +296,7 @@ function renderTracker(){
       '<td class="c-x"><button class="x" type="button" data-del="'+esc(a.id)+'" aria-label="Delete '+esc(a.name)+'">✕</button></td></tr>';
   }).join("");
   var msg=!p.acts.length?"No activities yet. Add the first one below.":!acts.length?"No activities match these filters.":"";
-  $("#body").innerHTML='<section class="group">'+(p.notes?'<div class="notes"><b>Scope</b>'+esc(p.notes)+'</div>':'')+
+  $("#body").innerHTML='<section class="group">'+
     (msg?'<div class="nomatch">'+msg+'</div>':'<div class="tscroll"><table><thead><tr><th class="c-phase">Phase</th><th>Activity</th><th class="c-status">Status</th><th class="c-pct">%</th><th class="c-date">Start</th><th class="c-date">End</th><th class="c-owner">Owner</th><th class="c-rem">Remarks</th><th class="c-x"></th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
     '<div class="gfoot"><button class="link" type="button" data-addact="'+esc(p.id)+'">+ Add activity</button></div></section><datalist id="phases">'+PHASES.map(function(x){return '<option value="'+x+'">'}).join("")+'</datalist>';
   document.querySelectorAll('#body textarea').forEach(fit);
