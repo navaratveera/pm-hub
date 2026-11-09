@@ -13,7 +13,9 @@
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
 .hero h1{margin:6px 0 8px;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.01em}
 .hero p{margin:0;max-width:62ch;color:var(--muted);font-size:15px}
-#tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:20px;padding-bottom:32px}
+#tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding-bottom:32px}
+@media(max-width:860px){#tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){#tools{grid-template-columns:minmax(0,1fr)}}
 #tools section{display:flex;flex-direction:column;min-width:0}
 .group-title{margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
 .tools{display:flex;flex-direction:column;gap:16px;flex:1}
