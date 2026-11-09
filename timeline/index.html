@@ -286,7 +286,7 @@ var STATUS={
   notstarted:{en:"Not Started",c:"#3D8FE6",fg:"#FFFFFF"},
   inprogress:{en:"In Progress",c:"#22A55B",fg:"#FFFFFF"},
   atrisk:{en:"At Risk",c:"#F2BE2C",fg:"#3A2A00"},
-  blocker:{en:"Blocker",c:"#E5484D",fg:"#FFFFFF"},
+  blocker:{en:"Delay",c:"#E5484D",fg:"#FFFFFF"},
   done:{en:"Done",c:"#A9B3C1",fg:"#FFFFFF"}
 };
 var SKEYS=Object.keys(STATUS);
@@ -614,9 +614,9 @@ function renderSummary(){
   var nextMs=its.filter(function(it){return isMs(it)&&span(it)&&span(it)[0]>=t}).sort(function(x,y){return span(x)[0]-span(y)[0]})[0];
   var pct=tasks?Math.round(cnt.done/tasks*100):0;
   var hk,hl,hs;
-  if(cnt.blocker){hk="blocker";hl="Blocked";hs=plural(cnt.blocker,"blocker")}
+  if(cnt.blocker){hk="blocker";hl="Delayed";hs=plural(cnt.blocker,"delayed activity","delayed activities")}
   else if(cnt.atrisk||over||ext){hk="atrisk";hl="At risk";hs=[cnt.atrisk?cnt.atrisk+" at risk":"",over?over+" overdue":""].filter(Boolean).join(" · ")||"Activities extended"}
-  else{hk="inprogress";hl="On track";hs="No blockers or overdue work"}
+  else{hk="inprogress";hl="On track";hs="No delays or overdue work"}
   if(ext)hs+=" · "+plural(ext,"extended activity","extended activities");
   if(bad)hs+=" · "+plural(bad,"row")+" with invalid dates";
   $("#summary").innerHTML=[
