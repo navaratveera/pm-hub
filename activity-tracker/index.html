@@ -32,28 +32,38 @@ header .wrap{display:flex;align-items:center;gap:12px;min-height:58px;flex-wrap:
 .btn.small{padding:4px 10px;font-size:12px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 
-.head{margin:26px 0 14px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:26px 0 16px}
+.head-l{min-width:0;flex:1}
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 h1{margin:3px 0 0;font-size:22px;line-height:1.25;letter-spacing:-.015em;font-weight:700}
-.asof{color:var(--muted);font-size:12.5px;margin-left:auto}
-.pbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
-.sw{position:relative;min-width:0;max-width:100%}
-.sw-btn{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--field);border-radius:8px;padding:8px 12px;cursor:pointer;max-width:100%;text-align:left;min-height:40px}
-.sw-btn:hover{border-color:var(--field-hover)}
-.sw-btn svg{flex:none;color:var(--muted)}
-.sw-name{font-weight:700;font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sw-tag{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
-.sw-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:25;width:min(540px,calc(100vw - 32px));background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(15,35,64,.16);padding:4px;max-height:min(420px,70vh);overflow:auto}
-.sw-item{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;background:none;border:0;border-radius:7px;padding:8px 10px;cursor:pointer;text-align:left}
+.asof{color:var(--muted);font-size:12.5px;margin-top:2px}
+.head-r{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
+.head-r .btn{min-height:38px;white-space:nowrap}
+.sw{position:relative;min-width:0;width:320px;max-width:100%}
+.sw-btn{display:flex;align-items:center;gap:9px;width:100%;background:#fff;border:1px solid var(--field);border-radius:8px;padding:0 11px;cursor:pointer;text-align:left;min-height:38px}
+.sw-btn:hover,.sw-btn[aria-expanded="true"]{border-color:var(--field-hover)}
+.sw-btn[aria-expanded="true"]{box-shadow:0 0 0 2px rgba(28,111,224,.14)}
+.sw-cap{flex:none;font-size:11px;font-weight:600;color:var(--muted);padding-right:9px;border-right:1px solid var(--line);line-height:18px}
+.sw-name{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sw-chev{flex:none;color:var(--muted);transition:transform .12s}
+.sw-btn[aria-expanded="true"] .sw-chev{transform:rotate(180deg)}
+.sw-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:25;width:min(440px,calc(100vw - 32px));background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(15,35,64,.14);overflow:hidden}
+.sw-head{padding:9px 14px 7px;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);border-bottom:1px solid var(--line)}
+.sw-list{max-height:min(340px,60vh);overflow:auto;padding:4px}
+.sw-item{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;border-radius:6px;padding:7px 10px 7px 6px;cursor:pointer;text-align:left}
 .sw-item:hover{background:var(--sky-50)}
-.sw-item.on{background:var(--sky-100)}
-.sw-l{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
-.sw-n{font-weight:600;min-width:0}
-.sw-l em{font-style:normal;font-size:11px;font-weight:600;color:var(--late)}
-.sw-p{display:flex;align-items:center;gap:7px;flex:none;font-weight:600;font-variant-numeric:tabular-nums;font-size:12.5px}
-.sw-p .t{width:64px;height:4px;border-radius:2px;background:var(--sky-200);overflow:hidden}
+.sw-item.on{background:var(--sky-50)}
+.sw-mark{flex:none;width:16px;display:grid;place-items:center;color:var(--accent-dark)}
+.sw-l{flex:1;min-width:0;display:flex;flex-direction:column}
+.sw-n{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sw-meta{font-size:11px;color:var(--muted);display:flex;gap:5px;flex-wrap:wrap}
+.sw-meta i{font-style:normal;color:var(--faint)}
+.sw-meta em{font-style:normal;font-weight:600;color:var(--late)}
+.sw-p{flex:none;display:flex;align-items:center;gap:8px}
+.sw-p b{width:34px;text-align:right;font-weight:600;font-size:12.5px;font-variant-numeric:tabular-nums}
+.sw-p .t{width:56px;height:4px;border-radius:2px;background:var(--sky-100);overflow:hidden}
 .sw-p .t i{display:block;height:100%;background:var(--accent)}
-.sw-new{display:block;width:100%;background:none;border:0;border-top:1px solid var(--line);margin-top:4px;padding:10px;text-align:left;color:var(--accent-dark);font-weight:700;cursor:pointer}
+.sw-new{display:block;width:100%;background:#fff;border:0;border-top:1px solid var(--line);padding:10px 14px;text-align:left;color:var(--accent-dark);font-weight:600;cursor:pointer}
 .sw-new:hover{background:var(--sky-50)}
 .nomatch{padding:28px 16px;text-align:center;color:var(--muted)}
 
@@ -137,7 +147,7 @@ dialog::backdrop{background:rgba(15,35,64,.4)}
 .err{color:var(--late);font-size:12px;min-height:0;margin:0}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:9px 14px;border-radius:10px;z-index:60;font-size:13px;display:flex;gap:12px;align-items:center;max-width:calc(100vw - 32px)}
 .toast button{background:none;border:0;color:#7CC0FF;font-weight:700;cursor:pointer}
-@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.stat.overall{grid-column:1/-1}.stat:last-child{grid-column:1/-1}#q{margin-left:0;width:100%}.asof{margin-left:0;width:100%}}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.stat.overall{grid-column:1/-1}.stat:last-child{grid-column:1/-1}#q{margin-left:0;width:100%}.head{flex-direction:column;gap:12px}.head-r{width:100%}.sw{flex:1;width:auto}}
 @media(max-width:640px){.wrap{padding:0 16px}h1{font-size:20px}}
 </style>
 </head>
@@ -148,9 +158,9 @@ dialog::backdrop{background:rgba(15,35,64,.4)}
 
 <div class="wrap"><main>
   <div class="head">
-    <div><div class="eyebrow">Schedule Management · Control Schedule</div><h1>Activity Tracker</h1></div>
+    <div class="head-l"><div class="eyebrow">Schedule Management · Activity Tracker</div><h1 id="ptitle">Activity Tracker</h1><div class="asof" id="asof"></div></div>
+    <div class="head-r"><button class="btn" id="btn-editp" type="button">Edit</button><div class="sw" id="sw"></div></div>
   </div>
-  <div class="pbar"><div class="sw" id="sw"></div><button class="link" id="btn-editp" type="button">Edit project</button><div class="asof" id="asof"></div></div>
   <section class="stats" id="stats" aria-label="Schedule summary"></section>
   <div class="bar-f">
     <span class="flabel">Owner</span>
@@ -229,22 +239,23 @@ function renderStats(){
 function rollRange(acts){var s="",e="";acts.forEach(function(a){if(a.start&&(!s||a.start<s))s=a.start;if(a.end&&(!e||a.end>e))e=a.end});return[s,e]}
 function renderFilters(){
   var p=cur(),rg=rollRange(p?p.acts:[]);
-  $("#asof").textContent=(rg[0]&&rg[1]?fmtShort(rg[0])+" "+rg[0].slice(0,4)+" – "+fmtShort(rg[1])+" "+rg[1].slice(0,4)+"  ·  ":"")+"As of "+fmtShort(TODAY)+" "+TODAY.slice(0,4);
+  $("#asof").textContent=(p&&p.tag?p.tag+"  ·  ":"")+(rg[0]&&rg[1]?fmtShort(rg[0])+" "+rg[0].slice(0,4)+" – "+fmtShort(rg[1])+" "+rg[1].slice(0,4)+"  ·  ":"")+"As of "+fmtShort(TODAY)+" "+TODAY.slice(0,4);
   $("#owners").innerHTML=OWNERS.map(function(o){return '<button class="chip" type="button" data-owner="'+esc(o)+'" aria-pressed="'+(filt.owner===o)+'">'+esc(o)+'</button>'}).join("");
   $("#clear").hidden=!(filt.owner||filt.stat||filt.q);
 }
 /* project picker: each project shows its own progress; new projects are created here, not stacked on the page */
 var menuOpen=false;
 function renderSwitcher(){
-  var p=cur();
+  var p=cur(),CHECK='<svg class="sw-check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5 5.8 10 11 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   $("#btn-editp").hidden=!p;
-  var name=p?(p.tag?'<span class="sw-tag">'+esc(p.tag)+'</span>':'')+(p.type==="adhoc"?'<span class="gtype">AD HOC</span>':'')+'<span class="sw-name">'+esc(p.name)+'</span>':'<span class="sw-name">No projects yet</span>';
+  $("#ptitle").innerHTML=p?esc(p.name)+(p.type==="adhoc"?' <span class="gtype">AD HOC</span>':''):"Activity Tracker";
   var items=plan.projects.map(function(x){
-    var pc=progress(x.acts),late=x.acts.filter(function(a){return lateDays(a)>0}).length;
-    return '<button class="sw-item'+(p&&x.id===p.id?" on":"")+'" type="button" role="menuitemradio" aria-checked="'+(!!p&&x.id===p.id)+'" data-pick="'+esc(x.id)+'"><span class="sw-l">'+(x.tag?'<span class="sw-tag">'+esc(x.tag)+'</span>':'')+(x.type==="adhoc"?'<span class="gtype">AD HOC</span>':'')+'<span class="sw-n">'+esc(x.name)+'</span>'+(late?'<em>'+late+' overdue</em>':'')+'</span><span class="sw-p"><span class="t"><i style="width:'+pc+'%"></i></span>'+pc+'%</span></button>';
+    var on=!!p&&x.id===p.id,pc=progress(x.acts),late=x.acts.filter(function(a){return lateDays(a)>0}).length;
+    var meta=[x.tag?esc(x.tag):"",x.type==="adhoc"?"Ad hoc":"",late?'<em>'+late+' overdue</em>':""].filter(Boolean).join('<i aria-hidden="true">·</i>');
+    return '<button class="sw-item'+(on?" on":"")+'" type="button" role="menuitemradio" aria-checked="'+on+'" data-pick="'+esc(x.id)+'" title="'+esc(x.name)+'"><span class="sw-mark">'+(on?CHECK:"")+'</span><span class="sw-l"><span class="sw-n">'+esc(x.name)+'</span>'+(meta?'<span class="sw-meta">'+meta+'</span>':'')+'</span><span class="sw-p"><span class="t"><i style="width:'+pc+'%"></i></span><b>'+pc+'%</b></span></button>';
   }).join("");
-  $("#sw").innerHTML='<button class="sw-btn" id="sw-btn" type="button" aria-haspopup="menu" aria-expanded="'+menuOpen+'">'+name+'<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
-    (menuOpen?'<div class="sw-menu" role="menu" aria-label="Projects">'+items+'<button class="sw-new" type="button" role="menuitem" data-newp>+ New project</button></div>':'');
+  $("#sw").innerHTML='<button class="sw-btn" id="sw-btn" type="button" aria-haspopup="menu" aria-expanded="'+menuOpen+'"><span class="sw-cap">Project</span><span class="sw-name">'+(p?esc(p.name):"None yet")+'</span><svg class="sw-chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
+    (menuOpen?'<div class="sw-menu" role="menu" aria-label="Projects"><div class="sw-head">'+plan.projects.length+(plan.projects.length===1?" project":" projects")+'</div><div class="sw-list">'+items+'</div><button class="sw-new" type="button" role="menuitem" data-newp>+ New project</button></div>':'');
 }
 function renderTracker(){
   var p=cur();
