@@ -61,6 +61,12 @@ h1{margin:3px 0 6px;font-size:22px;line-height:1.2;letter-spacing:-.02em;font-we
 .menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 .menu .warn{color:var(--late)}
 
+.exbar{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;background:#FFF6DB;border:1px solid #F0CF73;border-radius:10px;padding:12px 16px;margin-bottom:14px;color:#5C4300}
+.exb{background:#B7791F;color:#fff;font-weight:800;letter-spacing:.14em;font-size:12px;padding:5px 11px;border-radius:6px}
+.ext{flex:1 1 320px;font-size:13px;line-height:1.45}
+.ext b{color:#3F2E00}
+.exbadge{display:inline-block;vertical-align:4px;margin-left:10px;background:#B7791F;color:#fff;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:5px}
+body.is-example header.top{border-bottom:3px solid #E0A526}
 .note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12.5px;color:var(--muted)}
 .note b{color:var(--ink)}
 .note .link{margin-left:auto}
@@ -203,6 +209,24 @@ label.f textarea{resize:vertical;line-height:1.45}
 label.f input:hover,label.f select:hover,label.f textarea:hover{border-color:var(--field-hover)}
 label.f input:focus,label.f select:focus,label.f textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 2px rgba(28,111,224,.18)}
 .assess{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.pick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.pick button{border:1px solid var(--field);background:#fff;border-radius:7px;min-height:40px;font-weight:700;font-size:14px;cursor:pointer;color:var(--ink);font-variant-numeric:tabular-nums}
+.pick button:hover{border-color:var(--field-hover);background:#FBFCFE}
+.pick button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+label.f>span,div.f>span{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.pk-l{font-weight:700;color:var(--ink)}
+.opt{font-weight:500;color:var(--faint)}
+.auto{font-weight:600;color:var(--ok);font-size:11px}
+.qplan{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--sky-50);border:1px solid var(--sky-200);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--ink-2)}
+.qplan .sc{display:flex;align-items:center;gap:6px;font-weight:600}
+.qplan .pl{flex:1;min-width:220px}
+details.more{border:1px solid var(--line);border-radius:9px;margin-top:14px}
+details.more>summary{cursor:pointer;padding:11px 14px;font-weight:700;font-size:13px;color:var(--accent-dark);list-style:none;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"+";display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;background:var(--sky-100);font-size:14px;line-height:1}
+details.more[open]>summary::before{content:"−"}
+details.more>summary .opt{font-size:11.5px}
+.more-b{padding:0 14px 14px;border-top:1px solid var(--line)}
 .sugg{border:1px solid var(--sky-200);background:var(--sky-50);border-radius:8px;padding:10px 12px;font-size:12.5px;display:grid;gap:7px}
 .sugg .top{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
 .sugg .top .t{flex:1;min-width:200px}
@@ -230,6 +254,9 @@ footer.ft{margin:28px 0 30px;color:var(--faint);font-size:12px;display:flex;just
 .paper *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .r-band{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--navy);padding-bottom:7px;margin-bottom:14px;font-size:8.5pt;color:var(--muted);gap:10px;flex-wrap:wrap}
 .r-band .lg{display:flex;align-items:center;gap:7px;font-weight:700;color:var(--navy)}
+.paper{position:relative;overflow:hidden}
+.r-wm{position:absolute;top:22%;left:-10%;right:-10%;text-align:center;font-size:120pt;font-weight:800;letter-spacing:.1em;color:rgba(183,121,31,.11);transform:rotate(-28deg);pointer-events:none;z-index:1}
+.r-conf.ex{border-color:#B7791F;color:#fff;background:#B7791F}
 .r-conf{border:1px solid var(--late);color:var(--late);font-weight:700;letter-spacing:.08em;font-size:7.5pt;padding:2px 7px;border-radius:3px}
 .r-title{font-size:9pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-dark)}
 .r-h1{font-size:19pt;font-weight:800;letter-spacing:-.02em;margin:2px 0 10px;line-height:1.2}
@@ -290,6 +317,8 @@ table.r-t{width:100%;border-collapse:collapse;font-size:8.3pt}
   .rp-bar{display:none}
   .paper{width:auto;max-width:none;margin:0;padding:0;box-shadow:none}
   .r-scroll{overflow:visible}
+  .paper{overflow:visible}
+  .r-wm{position:fixed;top:38%}
 }
 </style>
 </head>
@@ -303,27 +332,32 @@ table.r-t{width:100%;border-collapse:collapse;font-size:8.3pt}
   <div class="pbar">
     <div class="pbar-l">
       <div class="eyebrow">Risk Management · Risk Register &amp; Heat Map</div>
-      <h1 id="pname">My project</h1>
+      <h1><span id="pname">My project</span><span class="exbadge" id="exbadge" hidden>Example</span></h1>
       <div class="meta" id="pmeta"></div>
     </div>
     <div class="pbar-r">
       <button class="btn primary" id="btn-add" type="button"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Add risk</button>
       <button class="btn dark" id="btn-report" type="button"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 1.5H4a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 4 14.5h8a1.5 1.5 0 0 0 1.5-1.5V5.5z"/><path d="M9.5 1.5v4h4M8 8v4M6 10.5 8 12.5l2-2"/></svg>Risk report</button>
+      <button class="btn" id="btn-ex" type="button">See example</button>
       <button class="btn" id="btn-proj" type="button">Project details</button>
       <button class="btn icon" id="btn-more" type="button" aria-haspopup="true" aria-expanded="false" aria-label="More options"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg></button>
       <div class="menu" id="menu" role="menu" hidden>
         <button type="button" role="menuitem" data-m="csv">Download register (Excel CSV)</button>
-        <button type="button" role="menuitem" data-m="example">Load example project</button>
+        <button type="button" role="menuitem" data-m="resetex" id="m-resetex">Reset example data</button>
         <hr>
         <button type="button" role="menuitem" data-m="export">Move to another device: export file</button>
         <button type="button" role="menuitem" data-m="import">Move to another device: import file</button>
         <hr>
-        <button type="button" role="menuitem" data-m="clear" class="warn">Clear register</button>
+        <button type="button" role="menuitem" data-m="clear" class="warn" id="m-clear">Clear my register</button>
       </div>
       <input type="file" id="file" accept=".json,application/json" hidden>
     </div>
   </div>
-  <div class="note" id="exnote" hidden><span><b>Example project.</b> All names and risks are fictitious. Explore it, then start your own register.</span><button class="link" id="btn-start" type="button">Start my own register →</button></div>
+  <div class="exbar" id="exnote" hidden>
+    <span class="exb">EXAMPLE</span>
+    <div class="ext"><b>You are viewing an example project.</b> The names and risks are made up to show how the tool works. Try dragging a risk, opening one, or downloading the risk report. Your own register is kept separately.</div>
+    <button class="btn primary" id="btn-start" type="button">Start my own register →</button>
+  </div>
 
   <section class="kpis" id="kpis" aria-label="Risk summary"></section>
 
@@ -357,29 +391,39 @@ table.r-t{width:100%;border-collapse:collapse;font-size:8.3pt}
   <form class="dlg" id="form" novalidate>
     <div class="dlg-h"><h2 id="dlg-title">Add risk</h2><button class="xbtn" type="button" data-close aria-label="Close">×</button></div>
     <div class="dlg-b">
-      <div class="sec"><h3>Risk identification</h3>
-        <label class="f">Risk title *<input id="f-title" required maxlength="160" placeholder="e.g. Vendor misses API delivery date"></label>
-        <label class="f">Description (cause, event, consequence)<textarea id="f-desc" rows="2" placeholder="Keywords here also improve the recommended response."></textarea></label>
-        <div class="fg"><label class="f">Category<select id="f-cat"></select></label><label class="f">Risk owner<input id="f-owner" maxlength="80" placeholder="Role or name"></label></div>
-      </div>
-      <div class="sec"><h3>Assessment</h3>
-        <div class="fg4">
-          <label class="f">Inherent probability<select id="f-p"></select></label>
-          <label class="f">Inherent impact<select id="f-i"></select></label>
-          <label class="f">Residual probability<select id="f-rp"></select></label>
-          <label class="f">Residual impact<select id="f-ri"></select></label>
+      <div class="sec">
+        <label class="f">What could go wrong? *<input id="f-title" required maxlength="160" placeholder="e.g. Vendor misses API delivery date" autocomplete="off"></label>
+        <div class="fg"><label class="f"><span>Category <span class="auto" id="f-catauto"></span></span><select id="f-cat"></select></label><label class="f"><span>Risk owner <span class="opt">optional</span></span><input id="f-owner" maxlength="80" placeholder="Role or name"></label></div>
+        <div class="fg">
+          <div class="f"><span>How likely? <b class="pk-l" id="pk-p-l"></b></span><div class="pick" data-k="p" role="group" aria-label="Probability, 1 rare to 5 almost certain"></div></div>
+          <div class="f"><span>How bad if it happens? <b class="pk-l" id="pk-i-l"></b></span><div class="pick" data-k="i" role="group" aria-label="Impact, 1 minimal to 5 severe"></div></div>
         </div>
-        <div class="assess" id="f-assess"></div>
+        <input type="hidden" id="f-p"><input type="hidden" id="f-i">
+        <div class="qplan" id="qplan" aria-live="polite"></div>
       </div>
-      <div class="sec"><h3>Response plan <span class="src" id="f-src"></span></h3>
-        <div class="sugg" id="sugg" aria-live="polite"></div>
-        <div class="fg"><label class="f">Response strategy<select id="f-strategy"><option>Avoid</option><option>Reduce</option><option>Transfer</option><option>Accept</option></select></label>
-          <div class="fg"><label class="f">Target date<input type="date" id="f-due"></label><label class="f">Status<select id="f-status"></select></label></div></div>
-        <label class="f">Actions (one per line)<textarea id="f-actions" rows="4"></textarea></label>
-        <div class="fg"><label class="f">Early-warning trigger<textarea id="f-trigger" rows="3"></textarea></label><label class="f">Contingency step<textarea id="f-cont" rows="3"></textarea></label></div>
-      </div>
+      <details class="more" id="more">
+        <summary>Add more detail <span class="opt">optional · description, residual rating, target date, response plan</span></summary>
+        <div class="more-b">
+          <div class="sec"><h3>Details</h3>
+            <label class="f">Description (cause, event, consequence)<textarea id="f-desc" rows="2" placeholder="Keywords here also improve the recommended response."></textarea></label>
+            <div class="fg4">
+              <label class="f">Residual probability<select id="f-rp"></select></label>
+              <label class="f">Residual impact<select id="f-ri"></select></label>
+              <label class="f">Target date<input type="date" id="f-due"></label>
+              <label class="f">Status<select id="f-status"></select></label>
+            </div>
+            <div class="assess" id="f-assess"></div>
+          </div>
+          <div class="sec"><h3>Response plan <span class="src" id="f-src"></span></h3>
+            <div class="sugg" id="sugg" aria-live="polite"></div>
+            <label class="f">Response strategy<select id="f-strategy"><option>Avoid</option><option>Reduce</option><option>Transfer</option><option>Accept</option></select></label>
+            <label class="f">Actions (one per line)<textarea id="f-actions" rows="4"></textarea></label>
+            <div class="fg"><label class="f">Early-warning trigger<textarea id="f-trigger" rows="3"></textarea></label><label class="f">Contingency step<textarea id="f-cont" rows="3"></textarea></label></div>
+          </div>
+        </div>
+      </details>
     </div>
-    <div class="dlg-f"><button class="btn danger" type="button" id="btn-del">Delete</button><span class="sp"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Save risk</button></div>
+    <div class="dlg-f"><button class="btn danger" type="button" id="btn-del">Delete</button><span class="sp"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit" id="btn-save">Add risk</button></div>
   </form>
 </dialog>
 
@@ -673,16 +717,28 @@ function clean(o){
   s.seq=Math.max(parseInt(o.seq,10)||0,max+1);
   return s;
 }
-function load(){try{var t=localStorage.getItem(KEY);if(t){var s=clean(JSON.parse(t));if(s)return s}}catch(e){}return example()}
+var KEY_EX="pmhub.riskmatrix.example.v1",KEY_MODE="pmhub.riskmatrix.mode",mode="example";
+function rd(k){try{var t=localStorage.getItem(k);return t?clean(JSON.parse(t)):null}catch(e){return null}}
+function load(){
+  var mine=rd(KEY),ex=rd(KEY_EX),m=null;try{m=localStorage.getItem(KEY_MODE)}catch(e){}
+  if(mine&&mine.example){if(!ex)ex=mine;mine=null;try{localStorage.removeItem(KEY);localStorage.setItem(KEY_EX,JSON.stringify(ex))}catch(e){}} // older drafts kept the example in the main slot
+  mode=m?(m==="mine"?"mine":"example"):(mine&&mine.risks.length?"mine":"example"); // first visit opens on the example
+  return mode==="mine"?(mine||blank()):(ex||example());
+}
+function switchMode(m){
+  save();mode=m;state=m==="mine"?(rd(KEY)||blank()):(rd(KEY_EX)||example());undoSnap=null;
+  save();render();window.scrollTo(0,0);
+  toast(m==="mine"?(state.risks.length?"Showing your register":"Your register is ready. Add your first risk."):"Showing the example project",false);
+}
 var CHECK='<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5" stroke-width="1.5"/><path d="M5.2 8.2 7 10l3.8-4"/></svg>';
 function save(){
   state.savedAt=Date.now();
-  try{localStorage.setItem(KEY,JSON.stringify(state));saveOk=true}catch(e){saveOk=false}
+  try{localStorage.setItem(mode==='mine'?KEY:KEY_EX,JSON.stringify(state));localStorage.setItem(KEY_MODE,mode);saveOk=true}catch(e){saveOk=false}
   showSaved();
 }
 function showSaved(){
   var el=$("#saved");el.classList.toggle("bad",!saveOk);
-  el.innerHTML=saveOk?CHECK+"<span>All changes saved · "+(state.savedAt?fmtTime(state.savedAt):"")+"</span>":CHECK+"<span>Not saved: this browser is blocking storage</span>";
+  el.innerHTML=saveOk?CHECK+"<span>"+(mode==="example"?"Example · ":"")+"All changes saved · "+(state.savedAt?fmtTime(state.savedAt):"")+"</span>":CHECK+"<span>Not saved: this browser is blocking storage</span>";
 }
 function snap(){undoSnap=JSON.stringify(state)}
 function commit(msg,canUndo){save();render();if(msg)toast(msg,canUndo)}
@@ -694,7 +750,8 @@ function openRisks(){return state.risks.filter(function(r){return r.status!=="Cl
 function render(){
   $("#pname").textContent=state.name;document.title=state.name+" · Risk Register";
   $("#pmeta").innerHTML=[state.code?"<span>Code <b>"+esc(state.code)+"</b></span>":"",state.pm?"<span>PM <b>"+esc(state.pm)+"</b></span>":"",state.unit?"<span>Unit <b>"+esc(state.unit)+"</b></span>":"","<span>"+state.risks.length+" risks in register</span>"].join("");
-  $("#exnote").hidden=!state.example;
+  var ex=mode==="example";$("#exnote").hidden=!ex;$("#exbadge").hidden=!ex;document.body.classList.toggle("is-example",ex);
+  $("#btn-ex").hidden=ex;$("#m-resetex").hidden=!ex;$("#m-clear").hidden=ex;
   renderKpis();renderMap();renderCats();renderTop();renderTable();
 }
 function renderKpis(){
@@ -713,7 +770,7 @@ function pos(r){return ui.view==="residual"?[r.rp,r.ri]:[r.p,r.i]}
 function renderMap(){
   var wrap=$("#hmwrap");
   document.querySelectorAll("[data-view]").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.view===ui.view)});
-  if(!state.risks.length){$("#hm-sub").textContent="";wrap.innerHTML='<div class="empty"><b>No risks yet</b>Add the risks you are concerned about. Each one gets a recommended response plan from the built-in library.<p><button class="btn primary" type="button" data-add>Add first risk</button></p></div>';return}
+  if(!state.risks.length){$("#hm-sub").textContent="";wrap.innerHTML='<div class="empty"><b>No risks yet</b>Add the risks you are concerned about. Each one gets a recommended response plan from the built-in library.<p style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary" type="button" data-add>Add first risk</button><button class="btn" type="button" data-ex>See example</button></p></div>';return}
   var shown=state.risks.filter(visible);
   $("#hm-sub").textContent=(ui.view==="residual"?"After response · ":"Before response · ")+shown.length+" risks";
   var h='<div class="mx"><div class="ax ax-y">Probability</div><div class="hm" role="grid" aria-label="'+(ui.view==="residual"?"Residual":"Inherent")+' risk heat map. Rows: probability 5 to 1. Columns: impact 1 to 5.">';
@@ -829,6 +886,7 @@ document.addEventListener("click",function(e){
   var row=t.closest("tr[data-id],.top5 li[data-id]");if(row){openDlg(row.dataset.id);return}
   var v=t.closest("[data-view]");if(v){ui.view=v.dataset.view;renderMap();return}
   if(t.closest("[data-add]"))return openDlg(null);
+  if(t.closest("[data-ex]"))return switchMode("example");
 });
 $("#btn-add").onclick=function(){openDlg(null)};
 $("#q").addEventListener("input",function(){ui.q=this.value;renderTable()});
@@ -836,14 +894,15 @@ $("#fcat").innerHTML='<option value="">All categories</option>'+CATS.map(functio
 $("#fcat").onchange=function(){ui.cat=this.value;renderTable()};
 $("#fband").onchange=function(){ui.band=this.value;renderTable()};
 $("#fclosed").onchange=function(){ui.closed=this.checked;renderMap();renderTable()};
-$("#btn-start").onclick=function(){if(!confirm("Clear the example and start an empty register?"))return;snap();state=blank();commit("New register started",true);openProj()};
+$("#btn-start").onclick=function(){switchMode("mine")};
+$("#btn-ex").onclick=function(){switchMode("example")};
 function toggleMenu(on){$("#menu").hidden=!on;$("#btn-more").setAttribute("aria-expanded",on)}
 $("#btn-more").onclick=function(){toggleMenu($("#menu").hidden)};
 $("#menu").addEventListener("click",function(e){
   var b=e.target.closest("[data-m]");if(!b)return;toggleMenu(false);
   var m=b.dataset.m;
   if(m==="csv")downloadCsv();
-  if(m==="example"){if(state.risks.length&&!state.example&&!confirm("Replace your register with the example project? You can undo right after."))return;snap();state=example();commit("Example project loaded",true)}
+  if(m==="resetex"){if(!confirm("Reset the example project to its original risks?"))return;snap();state=example();commit("Example reset",true)}
   if(m==="export")download(fileName("risk-register-data","json"),"application/json",JSON.stringify({app:"pmhub-risk-matrix",version:2,exportedAt:new Date().toISOString(),data:state},null,2));
   if(m==="import"){$("#file").value="";$("#file").click()}
   if(m==="clear"){if(!confirm("Delete all "+state.risks.length+" risks and project details from this browser? You can undo right after."))return;snap();state=blank();commit("Register cleared",true)}
@@ -854,7 +913,7 @@ $("#file").addEventListener("change",function(){
     var s=null;try{var o=JSON.parse(rd.result);s=clean(o&&o.data?o.data:o)}catch(e){}
     if(!s){alert("This file is not a PM Hub risk register file.");return}
     if(!confirm("Import "+s.risks.length+" risks from \""+f.name+"\"? This replaces the register in this browser. You can undo right after."))return;
-    snap();state=s;commit("Imported "+s.risks.length+" risks",true);
+    if(mode!=="mine"){save();mode="mine"}s.example=false;snap();state=s;commit("Imported "+s.risks.length+" risks into your register",true);
   };rd.readAsText(f);
 });
 
@@ -870,17 +929,49 @@ $("#pform").addEventListener("submit",function(e){
 });
 
 /* ---------- risk dialog ---------- */
-var dlg=$("#dlg"),editing=null,mitSrc="";
+var dlg=$("#dlg"),editing=null,mitSrc="",catTouched=false,resTouched=false;
 function F(id){return $("#f-"+id)}
 $("#f-cat").innerHTML=CATS.map(function(c){return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'}).join("");
-["p","rp"].forEach(function(k){F(k).innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+PL[n]+'</option>'}).join("")});
-["i","ri"].forEach(function(k){F(k).innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+IL[n]+'</option>'}).join("")});
+F("rp").innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+PL[n]+'</option>'}).join("");
+F("ri").innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+IL[n]+'</option>'}).join("");
 F("status").innerHTML=STATUSES.map(function(s){return '<option>'+s+'</option>'}).join("");
+document.querySelectorAll(".pick").forEach(function(g){
+  var L=g.dataset.k==="p"?PL:IL;
+  g.innerHTML=[1,2,3,4,5].map(function(n){return '<button type="button" data-v="'+n+'" title="'+n+' · '+L[n]+'" aria-pressed="false">'+n+'</button>'}).join("");
+  g.addEventListener("click",function(e){var b=e.target.closest("[data-v]");if(!b)return;setPick(g.dataset.k,+b.dataset.v);onRating()});
+});
+function setPick(k,v){
+  F(k).value=v;
+  document.querySelectorAll('.pick[data-k="'+k+'"] button').forEach(function(b){b.setAttribute("aria-pressed",+b.dataset.v===v)});
+  $("#pk-"+k+"-l").textContent=v+" · "+(k==="p"?PL:IL)[v];
+}
 function formRisk(){return {title:F("title").value.trim(),desc:F("desc").value.trim(),cat:F("cat").value,owner:F("owner").value.trim(),p:+F("p").value,i:+F("i").value,rp:+F("rp").value,ri:+F("ri").value,due:F("due").value,status:F("status").value}}
 function mitEmpty(){return !F("actions").value.trim()&&!F("trigger").value.trim()&&!F("cont").value.trim()}
 function setMit(m){F("strategy").value=m.strategy;F("actions").value=m.actions.join("\n");F("trigger").value=m.trigger;F("cont").value=m.contingency;mitSrc=m.src;showSrc()}
 function showSrc(){var r=mitSrc.indexOf("library:")===0?RULE[mitSrc.slice(8)]:null;F("src").textContent=r?"· Draft from PM Hub library: review before approval":(mitSrc?"· Tailored by you":"")}
+function onRating(){
+  if(!resTouched){F("rp").value=F("p").value;F("ri").value=F("i").value}   // residual follows inherent until the user sets it
+  updAssess();updQuick();
+}
 function updAssess(){var a=+F("p").value*+F("i").value,b=+F("rp").value*+F("ri").value;F("assess").innerHTML='Inherent '+pill(a)+'<span class="arrow">→</span>Residual '+pill(b)+(b>a?' <span style="color:var(--late)">Residual is higher than inherent</span>':'')}
+// keep the library plan in step with the title until the user edits the plan
+function autoPlan(){
+  if(mitSrc&&mitSrc.indexOf("library:")!==0)return;
+  var top=suggest(formRisk())[0].rule;
+  if(!F("title").value.trim()&&!editing){setMit({strategy:"Reduce",actions:[],trigger:"",contingency:"",src:""});return}
+  if(mitSrc!=="library:"+top.id)setMit(mitFrom(top));
+}
+function updQuick(){
+  var s=+F("p").value*+F("i").value,r=mitSrc.indexOf("library:")===0?RULE[mitSrc.slice(8)]:null,n=F("actions").value.split("\n").filter(function(x){return x.trim()}).length;
+  var plan=!F("title").value.trim()&&!editing?'<span class="pl" style="color:var(--muted)">Type the risk and a response plan will be added for you.</span>':
+    '<span class="pl">Response plan: <b>'+(r?esc(r.name):"Tailored by you")+'</b> <span class="strat s-'+F("strategy").value+'">'+F("strategy").value+'</span> · '+n+' action'+(n===1?"":"s")+(r?' <span class="opt">from the PM Hub library</span>':'')+'</span>';
+  $("#qplan").innerHTML='<span class="sc">Rating '+pill(s)+'</span>'+plan;
+}
+function detectCat(){
+  if(catTouched)return;
+  var m=suggest({title:F("title").value,desc:F("desc").value,cat:""})[0];
+  if(m.hits.length){F("cat").value=m.rule.cat;$("#f-catauto").textContent="· auto-detected"}else $("#f-catauto").textContent="";
+}
 function updSugg(){
   var fr=formRisk(),list=suggest(fr),top=list[0],using=mitSrc==="library:"+top.rule.id;
   var why=top.hits.length?"Matched on: "+top.hits.slice(0,5).join(", ")+(top.rule.cat===fr.cat?" and category":""):(top.rule.cat===fr.cat?"Matched on category":"No close match yet. Add detail to the title or description.");
@@ -892,30 +983,36 @@ function updSugg(){
 $("#sugg").addEventListener("click",function(e){
   var b=e.target.closest("[data-use]");if(!b)return;var rule=RULE[b.dataset.use];
   if(!mitEmpty()&&mitSrc.indexOf("library:")!==0&&!confirm("Replace your tailored response plan with \""+rule.name+"\"?"))return;
-  setMit(mitFrom(rule));updSugg();
+  setMit(mitFrom(rule));updSugg();updQuick();
 });
-["title","desc","cat"].forEach(function(k){F(k).addEventListener("input",updSugg)});
-["p","i","rp","ri"].forEach(function(k){F(k).addEventListener("change",updAssess)});
-["strategy","actions","trigger","cont"].forEach(function(k){F(k).addEventListener("input",function(){mitSrc="edited";showSrc();updSugg()})});
+function onText(){detectCat();autoPlan();updSugg();updQuick()}
+F("title").addEventListener("input",onText);F("desc").addEventListener("input",onText);
+F("cat").addEventListener("change",function(){catTouched=true;$("#f-catauto").textContent="";autoPlan();updSugg();updQuick()});
+["rp","ri"].forEach(function(k){F(k).addEventListener("change",function(){resTouched=true;updAssess()})});
+["strategy","actions","trigger","cont"].forEach(function(k){F(k).addEventListener("input",function(){mitSrc="edited";showSrc();updSugg();updQuick()})});
 function openDlg(id){
   editing=id?byId(id):null;
   $("#dlg-title").textContent=editing?editing.code+" · Edit risk":"Add risk";
+  $("#btn-save").textContent=editing?"Save changes":"Add risk";
   $("#btn-del").hidden=!editing;
-  var r=editing||{title:"",desc:"",cat:"regulatory",owner:"",p:3,i:3,rp:3,ri:3,due:"",status:"Open",mit:{strategy:"Reduce",actions:[],trigger:"",contingency:"",src:""}};
-  ["title","desc","cat","owner","p","i","rp","ri","due","status"].forEach(function(k){F(k).value=r[k]});
-  setMit(r.mit);updAssess();updSugg();
+  var r=editing||{title:"",desc:"",cat:"other",owner:"",p:3,i:3,rp:3,ri:3,due:"",status:"Open",mit:{strategy:"Reduce",actions:[],trigger:"",contingency:"",src:""}};
+  ["title","desc","cat","owner","rp","ri","due","status"].forEach(function(k){F(k).value=r[k]});
+  setPick("p",r.p);setPick("i",r.i);
+  catTouched=!!editing;resTouched=!!editing&&(r.rp!==r.p||r.ri!==r.i);$("#f-catauto").textContent="";
+  setMit(r.mit);updAssess();updSugg();updQuick();
+  $("#more").open=!!editing;
   dlg.showModal();F("title").focus();
 }
 dlg.addEventListener("click",function(e){if(e.target.closest("[data-close]")||e.target===dlg)dlg.close()});
 $("#form").addEventListener("submit",function(e){
   e.preventDefault();
-  var fr=formRisk();if(!fr.title){F("title").setCustomValidity("Give the risk a title");F("title").reportValidity();F("title").setCustomValidity("");return}
+  var fr=formRisk();if(!fr.title){F("title").setCustomValidity("Write the risk in a few words");F("title").reportValidity();F("title").setCustomValidity("");return}
   var acts=F("actions").value.split("\n").map(function(s){return s.trim()}).filter(Boolean);
   var m={strategy:F("strategy").value,actions:acts,trigger:F("trigger").value.trim(),contingency:F("cont").value.trim(),src:mitSrc||"edited"};
   if(!acts.length&&!m.trigger&&!m.contingency)m=mitFrom(suggest(fr)[0].rule);
   snap();
   if(editing){Object.assign(editing,fr);editing.mit=m;dlg.close();commit(editing.code+" saved",true)}
-  else{var r=mk(fr,state.seq++);Object.assign(r,{rp:fr.rp,ri:fr.ri});r.mit=m;state.risks.push(r);dlg.close();commit(r.code+" added",true)}
+  else{var r=mk(fr,state.seq++);Object.assign(r,{rp:fr.rp,ri:fr.ri});r.mit=m;state.risks.push(r);dlg.close();commit(r.code+" added with a "+m.strategy.toLowerCase()+" plan",true)}
 });
 $("#btn-del").onclick=function(){
   if(!editing||!confirm("Delete "+editing.code+" \""+editing.title+"\"?"))return;
@@ -962,7 +1059,8 @@ function buildReport(){
   var bandsResid=open.filter(function(r){return res(r)>=10}).map(function(r){return r.code});
   if(bandsResid.length)sum.push("Still high or critical after response: "+bandsResid.join(", ")+". These need escalation or a stronger response.");
 
-  var h='<div class="r-band"><span class="lg"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1C6FE0"/><rect x="6" y="6" width="5" height="5" rx="1" fill="#fff"/><rect x="13" y="6" width="5" height="5" rx="1" fill="#fff" opacity=".7"/><rect x="6" y="13" width="5" height="5" rx="1" fill="#fff" opacity=".5"/><rect x="13" y="13" width="5" height="5" rx="1" fill="#fff" opacity=".8"/></svg>PM Hub · Risk Management</span><span class="r-conf">'+esc(state.cls.toUpperCase())+'</span></div>';
+  var h='<div class="r-band"><span class="lg"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1C6FE0"/><rect x="6" y="6" width="5" height="5" rx="1" fill="#fff"/><rect x="13" y="6" width="5" height="5" rx="1" fill="#fff" opacity=".7"/><rect x="6" y="13" width="5" height="5" rx="1" fill="#fff" opacity=".5"/><rect x="13" y="13" width="5" height="5" rx="1" fill="#fff" opacity=".8"/></svg>PM Hub · Risk Management</span><span class="r-conf'+(mode==="example"?' ex">EXAMPLE · FICTITIOUS DATA':'">'+esc(state.cls.toUpperCase()))+'</span></div>';
+  if(mode==="example")h='<div class="r-wm" aria-hidden="true">EXAMPLE</div>'+h;
   h+='<div class="r-title">Project Risk Report</div><div class="r-h1">'+esc(state.name)+'</div>';
   h+='<div class="r-meta"><div><span>Project code</span><b>'+esc(state.code||"—")+'</b></div><div><span>Project manager</span><b>'+esc(state.pm||"—")+'</b></div><div><span>Business unit</span><b>'+esc(state.unit||"—")+'</b></div>'+
      '<div><span>Report date</span><b>'+fmtDate(iso(now))+'</b></div><div><span>Data as of</span><b>'+(state.savedAt?fmtTime(state.savedAt):"—")+'</b></div><div><span>Risks in register</span><b>'+state.risks.length+' ('+open.length+' open)</b></div></div>';
@@ -1010,7 +1108,7 @@ $("#btn-report").onclick=openReport;
 $("#rp-close").onclick=closeReport;
 $("#rp-csv").onclick=downloadCsv;
 $("#rp-pdf").onclick=function(){
-  prevTitle=document.title;document.title="Risk-Report_"+slug(state.code||state.name)+"_"+today(); // becomes the suggested PDF file name
+  prevTitle=document.title;document.title=(mode==="example"?"EXAMPLE_":"")+"Risk-Report_"+slug(state.code||state.name)+"_"+today(); // becomes the suggested PDF file name
   window.print();
 };
 window.addEventListener("afterprint",function(){document.title=prevTitle});
@@ -1023,7 +1121,7 @@ function toast(msg,canUndo){
   clearTimeout(tt);tt=setTimeout(function(){$("#toast").hidden=true},6000);
 }
 $("#toast-undo").onclick=function(){if(!undoSnap)return;state=clean(JSON.parse(undoSnap));undoSnap=null;save();render();toast("Undone",false)};
-window.addEventListener("storage",function(e){if(e.key===KEY){var s=null;try{s=clean(JSON.parse(e.newValue))}catch(x){}if(s){state=s;render();showSaved()}}});
+window.addEventListener("storage",function(e){if(e.key===(mode==="mine"?KEY:KEY_EX)){var s=null;try{s=clean(JSON.parse(e.newValue))}catch(x){}if(s){state=s;render();showSaved()}}});
 
 state=load();save();render();
 if(location.hash==="#report")openReport();
