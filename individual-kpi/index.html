@@ -176,6 +176,8 @@ main{padding:24px 0 12px}
 .log-head small{display:block;font-size:12.5px;color:var(--muted);font-weight:400;letter-spacing:0}
 footer{padding:10px 0 26px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){.card,.seg-track i{transition:none}.card:hover{transform:none}}
+.ro-banner{background:var(--navy);color:#fff;text-align:center;font-size:13px;font-weight:600;padding:8px 16px}
+body.readonly [data-log],body.readonly [data-editkpi],body.readonly [data-addkpi],body.readonly [data-edit],body.readonly [data-del],body.readonly [data-settings],body.readonly [data-backup],body.readonly [data-restore],body.readonly .card-add,body.readonly .foot-btns,body.readonly .acts,body.readonly .ed,body.readonly #btn-log,body.readonly #btn-share,body.readonly #menu{display:none!important}
 /* dialogs */
 dialog{border:0;border-radius:16px;padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);box-shadow:0 18px 50px rgba(15,35,64,.28);color:var(--ink)}
 dialog.wide{width:min(980px,calc(100vw - 32px))}
@@ -246,11 +248,13 @@ table.kt tr:last-child td{border-bottom:0}
         <button id="btn-restore" type="button">Restore</button>
       </div>
     </details>
+    <button class="btn" id="btn-share" type="button">Share</button>
     <button class="btn primary" id="btn-log" type="button">+ Log achievement</button>
     <input id="restore-file" type="file" accept=".json,application/json" hidden>
   </div>
 </div></header>
 
+<div class="ro-banner" id="ro-banner" hidden></div>
 <div class="wrap">
 <main>
   <div id="view-home">
@@ -356,6 +360,20 @@ table.kt tr:last-child td{border-bottom:0}
   </div>
 </form></dialog>
 
+<dialog id="d-share"><form class="dlg" method="dialog" id="share-form" novalidate>
+  <h2>Share a read-only file</h2>
+  <div class="body">
+    <p style="margin:0">Creates one file with your KPIs and achievements as they are now. Send it by email or Drive; whoever opens it can look but not change anything.</p>
+    <label class="check"><input id="sh-files" type="checkbox" checked> <span id="sh-files-label"></span></label>
+    <p class="hint">Anyone who has the file can read everything in it, and it can be forwarded. It does not update, so create a new one after you log more.</p>
+    <div class="err" id="sh-err" role="alert"></div>
+  </div>
+  <div class="foot">
+    <button class="btn" type="button" data-close>Cancel</button>
+    <button class="btn primary" type="submit" id="sh-make">Create file</button>
+  </div>
+</form></dialog>
+
 <dialog id="d-ask"><div class="dlg">
   <h2 id="ask-title"></h2>
   <div class="body"><p id="ask-text" style="margin:0"></p></div>
@@ -371,6 +389,10 @@ table.kt tr:last-child td{border-bottom:0}
 <script>
 (function(){
 "use strict";
+// the read-only copy is this page plus its data, so take the page before anything is drawn into it
+var SNAP=null;
+try{var snapEl=document.getElementById("kpi-snapshot");if(snapEl)SNAP=JSON.parse(snapEl.textContent)}catch(e){}
+var PAGE_HTML=SNAP?"":"<!doctype html>\n"+document.documentElement.outerHTML;
 /* ---------- starting data: blank, so everyone adds their own KPIs. Nothing personal belongs in this file: the repo is public. ---------- */
 var SEED={v:1,lastBackup:0,
   profile:{name:"",role:"",level:"",department:"",team:"",year:new Date().getFullYear(),period:"Year-End"},
@@ -411,10 +433,14 @@ function tx(store,mode,fn){return new Promise(function(res,rej){
   t.oncomplete=function(){res(out&&"result" in out?out.result:undefined)};
   t.onerror=function(){rej(t.error)};t.onabort=function(){rej(t.error)};
 })}
-function getFile(id){return tx("files","readonly",function(s){return s.get(id)})}
+function fromB64(data,type){var bin=atob(data),a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:type||""})}
+function getFile(id){
+  if(SNAP){var f=(SNAP.files||[]).filter(function(x){return x&&x.id===id&&typeof x.data==="string"})[0];return Promise.resolve(f?{id:f.id,blob:fromB64(f.data,String(f.type||"")),name:String(f.name||"file"),type:String(f.type||"")}:undefined)}
+  return tx("files","readonly",function(s){return s.get(id)});
+}
 function putFile(rec){return tx("files","readwrite",function(s){return s.put(rec)})}
 function delFile(id){return tx("files","readwrite",function(s){return s.delete(id)})}
-function saveDoc(){return tx("kv","readwrite",function(s){return s.put(doc,"doc")})}
+function saveDoc(){if(SNAP)return Promise.resolve();return tx("kv","readwrite",function(s){return s.put(doc,"doc")})}
 
 function normDoc(o){
   o=o&&typeof o==="object"?o:{};
@@ -481,13 +507,13 @@ function renderHome(){
   var now=new Date(), y=p.year, days=Math.ceil((Date.UTC(y,11,31)-Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()))/864e5);
   var sub=[p.role,p.level,p.department===p.team?p.department:[p.department,p.team].filter(Boolean).join(" / ")].filter(Boolean).join(" · ");
   var C=2*Math.PI*44, pctv=Math.round(score*100);
-  $("#hero").innerHTML='<div class="hero-top"><div class="hero-id"><div class="eyebrow">'+esc(p.period)+' '+esc(y)+'</div><h1>'+esc(p.name||"My KPIs")+'</h1><p>'+esc(sub||"Add your name and role under More")+'</p></div>'+
+  $("#hero").innerHTML='<div class="hero-top"><div class="hero-id"><div class="eyebrow">'+esc(p.period)+' '+esc(y)+'</div><h1>'+esc(p.name||"My KPIs")+'</h1><p>'+esc(sub||(SNAP?"":"Add your name and role under More"))+'</p></div>'+
     '<div class="ring" role="img" aria-label="Weighted progress to Standard: '+pctv+'%"><svg width="112" height="112" viewBox="0 0 104 104" aria-hidden="true"><circle cx="52" cy="52" r="44" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="8"/><circle cx="52" cy="52" r="44" fill="none" stroke="#7CC0FF" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+(C*score)+' '+C+'"/></svg><div class="num">'+pctv+'<small>%</small></div><div class="cap">Weighted progress<br>to Standard</div></div></div>'+
     '<div class="hero-stats">'+[[atStd+" / "+doc.kpis.length,"KPIs at Standard or above"],[es.length,"Achievements logged"],[days>=0?days:"Ended",days>=0?"Days left in "+y:"Period "+y]].map(function(x){return '<div><b>'+esc(x[0])+'</b><span>'+esc(x[1])+'</span></div>'}).join("")+'</div>';
   var h="";
   if(doc.kpis.length&&Math.abs(tw-100)>.001)h+='<div class="note"><span class="grow"><b>Weights add up to '+esc(fmtNum(tw))+'%.</b> They should total 100%.</span><button class="btn small" type="button" data-settings>Edit KPIs</button></div>';
   if(doc.entries.length&&!doc.lastBackup)h+='<div class="note"><span class="grow"><b>Not backed up yet.</b> Your log and evidence are only in this browser. Clearing browser data would remove them.</span><button class="btn small" type="button" data-backup>Back up now</button></div>';
-  $("#notes").innerHTML=h;
+  $("#notes").innerHTML=SNAP?"":h;
   if(!doc.kpis.length){$("#cards").innerHTML='<div class="empty" style="grid-column:1/-1"><b>No KPIs yet</b>Add your KPIs to start logging, or restore a backup. Everything stays in this browser.<br><button class="btn primary" type="button" data-addkpi>+ Add KPI</button> <button class="btn" type="button" data-restore>Restore a backup</button></div>';return}
   $("#cards").innerHTML=doc.kpis.map(function(k){
     var a=actual(k.id), lv=level(k,a), list=kpiEntries(k.id);
@@ -513,7 +539,7 @@ function renderKpiPage(id){
     '<div class="kprog"><div class="big"><b>'+esc(fmtNum(a))+'</b>'+esc(unitFor(k,a))+'</div><span class="lvl '+lv[0]+'">'+lv[1]+'</span><span class="nexttxt">'+esc(nextTxt)+'</span></div>'+barHtml(k,a)+
     '<div class="ladder">'+steps+'</div></section>'+
     '<div class="sec-head"><h2>What I\'ve done</h2><span>'+list.length+(list.length===1?" achievement":" achievements")+(others?" · "+others+" outside "+doc.profile.year+" not shown":"")+'</span></div>'+
-    (list.length?'<div class="timeline">'+list.map(function(e){return entryHtml(e,false)}).join("")+'</div>':'<div class="empty"><b>Nothing logged for this KPI yet</b>Record an achievement and attach its evidence as soon as it happens.<br><button class="btn primary" type="button" data-log="'+esc(id)+'">+ Log achievement</button></div>');
+    (list.length?'<div class="timeline">'+list.map(function(e){return entryHtml(e,false)}).join("")+'</div>':'<div class="empty"><b>Nothing logged for this KPI yet</b><span class="ed">Record an achievement and attach its evidence as soon as it happens.<br></span><button class="btn primary" type="button" data-log="'+esc(id)+'">+ Log achievement</button></div>');
   paintThumbs();
 }
 function entryHtml(e,showKpi){
@@ -551,7 +577,7 @@ function renderLog(){
   }).sort(byNewest);
   $("#log-count").textContent=list.length+(list.length===1?" entry":" entries");
   if(!list.length){
-    $("#log").innerHTML=doc.entries.length?'<div class="empty"><b>Nothing matches these filters</b></div>':'<div class="empty"><b>Nothing logged yet</b>Record an achievement and attach its evidence as soon as it happens.<br><button class="btn primary" type="button" data-log="">+ Log achievement</button></div>';
+    $("#log").innerHTML=doc.entries.length?'<div class="empty"><b>Nothing matches these filters</b></div>':'<div class="empty"><b>Nothing logged yet</b><span class="ed">Record an achievement and attach its evidence as soon as it happens.<br></span><button class="btn primary" type="button" data-log="">+ Log achievement</button></div>';
     return;
   }
   $("#log").innerHTML='<div class="timeline">'+list.map(function(e){return entryHtml(e,true)}).join("")+'</div>';
@@ -559,7 +585,9 @@ function renderLog(){
 }
 function renderStorage(){
   var last=doc.lastBackup?"Last backup "+fmtDate(new Date(doc.lastBackup).toISOString().slice(0,10)):"No backup yet";
-  var el=$("#storage");el.textContent="Saved in this browser only · "+last;
+  var el=$("#storage");
+  if(SNAP){el.textContent="Read-only copy. Nothing here can be changed or saved.";return}
+  el.textContent="Saved in this browser only · "+last;
   if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(function(s){el.textContent="Saved in this browser only · "+fmtSize(s.usage||0)+" used · "+last}).catch(function(){});
 }
 
@@ -729,7 +757,7 @@ function openFile(entryId,fileId){
   // read the blob before anything opens; a new tab would lose the click's permission later, so PDFs get the tab first
   var pdf=m.type==="application/pdf", win=pdf?window.open("","_blank"):null;
   getFile(fileId).then(function(r){
-    if(!r||!r.blob){if(win)win.close();toast("This file is missing from this browser");return}
+    if(!r||!r.blob){if(win)win.close();toast(SNAP?"This file was not included in this copy":"This file is missing from this browser");return}
     if(PREVIEW_IMG.test(m.type)){
       if(viewUrl)URL.revokeObjectURL(viewUrl);
       viewUrl=URL.createObjectURL(r.blob);viewing={blob:r.blob,name:m.name};
@@ -782,6 +810,29 @@ $("#restore-file").addEventListener("change",function(){
   }).catch(function(){toast("This file is not a valid KPI backup")});
 });
 
+/* ---------- share a read-only file ---------- */
+function allFiles(){var out=[];doc.entries.forEach(function(e){e.files.forEach(function(f){out.push(f)})});return out}
+$("#btn-share").addEventListener("click",function(){
+  if(!doc.kpis.length){toast("Add your KPIs first");return}
+  var fs=allFiles(), size=fs.reduce(function(a,f){return a+f.size},0);
+  $("#sh-files").checked=true;$("#sh-files").disabled=!fs.length;
+  $("#sh-files-label").textContent=fs.length?"Include "+fs.length+" evidence file"+(fs.length===1?"":"s")+" (about "+fmtSize(size*1.34)+" added)":"No evidence files to include";
+  $("#sh-err").textContent="";$("#d-share").showModal();
+});
+$("#share-form").addEventListener("submit",function(ev){
+  ev.preventDefault();
+  var btn=$("#sh-make"), err=$("#sh-err"), metas=$("#sh-files").checked?allFiles():[], stamp=Date.now();
+  btn.disabled=true;btn.textContent="Creating…";err.textContent="";
+  Promise.all(metas.map(function(m){return getFile(m.id).then(function(r){return r&&r.blob?b64(r.blob).then(function(d){return{id:m.id,name:m.name,type:m.type,data:d}}):null})})).then(function(fs){
+    var copy=JSON.parse(JSON.stringify(doc));copy.lastBackup=0;
+    var json=JSON.stringify({app:"individual-kpi-share",v:1,createdAt:stamp,doc:copy,files:fs.filter(Boolean)}).replace(/</g,"\\u003c");
+    var at=PAGE_HTML.indexOf("</head>");if(at<0)throw new Error("page");
+    var who=(doc.profile.name||"").replace(/[\\/:*?"<>|]+/g,"").trim();
+    download(new Blob([PAGE_HTML.slice(0,at),'<script type="application/json" id="kpi-snapshot">',json,"<\/script>",PAGE_HTML.slice(at)],{type:"text/html"}),"KPI "+(who?who+" ":"")+isoToday()+".html");
+    $("#d-share").close();toast("File created. Send it by email or Drive.");
+  }).catch(function(){err.textContent="Could not create the file. Try leaving out the evidence files."}).then(function(){btn.disabled=false;btn.textContent="Create file"});
+});
+
 /* ---------- page events ---------- */
 $("#btn-log").addEventListener("click",function(){openEntry(null)});
 window.addEventListener("hashchange",function(){window.scrollTo(0,0);render()});
@@ -815,7 +866,13 @@ document.addEventListener("click",function(ev){
 document.addEventListener("keydown",function(ev){if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches&&ev.target.matches("img[data-thumb]")){ev.preventDefault();ev.target.click()}});
 
 /* ---------- start ---------- */
-openDb().then(function(d){
+if(SNAP){
+  doc=normDoc(SNAP.doc);
+  document.body.classList.add("readonly");
+  var rb=$("#ro-banner");rb.hidden=false;rb.textContent="Read-only copy · as of "+fmtDate(new Date(+SNAP.createdAt||Date.now()).toISOString().slice(0,10));
+  $(".brand").href="https://navaratveera.github.io/pm-hub/";
+  render();
+}else openDb().then(function(d){
   db=d;
   return tx("kv","readonly",function(s){return s.get("doc")});
 }).then(function(saved){
