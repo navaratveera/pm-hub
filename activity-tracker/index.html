@@ -161,7 +161,7 @@ dialog::backdrop{background:rgba(15,35,64,.4)}
 <div class="wrap"><main>
   <div class="head">
     <div class="head-l"><div class="eyebrow">Schedule Management · Activity Tracker</div><h1 id="ptitle">Activity Tracker</h1><div class="asof" id="asof"></div></div>
-    <div class="head-r"><button class="btn" id="btn-editp" type="button">Edit</button><div class="sw" id="sw"></div></div>
+    <div class="head-r"><button class="btn" id="btn-example" type="button" data-example>See example</button><button class="btn" id="btn-editp" type="button">Edit</button><div class="sw" id="sw"></div></div>
   </div>
   <section class="stats" id="stats" aria-label="Schedule summary"></section>
   <div class="bar-f">
@@ -172,7 +172,7 @@ dialog::backdrop{background:rgba(15,35,64,.4)}
   </div>
   <div id="body"></div>
 </main>
-<footer><span id="saved">Saved in this browser only</span><span>© 2026 Navarat Veerawongchai All rights reserved.</span></footer>
+<footer><span id="saved">Saved in this browser only</span><span>PM Hub by Navarat Veerawongchai · © 2026 · MIT License</span></footer>
 </div>
 
 <dialog id="d-proj"><form class="dlg" id="proj-form" method="dialog" novalidate>
@@ -267,7 +267,7 @@ function renderFilters(){
 var menuOpen=false;
 function renderSwitcher(){
   var p=cur(),CHECK='<svg class="sw-check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5 5.8 10 11 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  $("#btn-editp").hidden=!p;
+  $("#btn-editp").hidden=!p;$("#btn-example").hidden=!p||!!p.example;
   $("#ptitle").innerHTML=p?esc(p.name)+(p.type==="adhoc"?' <span class="gtype">AD HOC</span>':''):"Activity Tracker";
   var items=plan.projects.map(function(x){
     var on=!!p&&x.id===p.id,pc=progress(x.acts),late=x.acts.filter(function(a){return lateDays(a)>0}).length;
@@ -382,6 +382,7 @@ $("#sw").addEventListener("click",function(ev){
 });
 document.addEventListener("click",function(ev){if(menuOpen&&ev.composedPath().indexOf($("#sw"))<0){menuOpen=false;renderSwitcher()}});
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&menuOpen){menuOpen=false;renderSwitcher();$("#sw-btn").focus()}});
+$("#btn-example").addEventListener("click",showExample);
 $("#btn-editp").addEventListener("click",function(){var p=cur();if(p)openProj(p.id)});
 $("#pj-cancel").addEventListener("click",function(){$("#d-proj").close()});
 $("#proj-form").addEventListener("submit",function(ev){
