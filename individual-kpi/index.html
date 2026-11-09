@@ -244,6 +244,7 @@ table.kt tr:last-child td{border-bottom:0}
         <button id="btn-settings" type="button">Edit profile &amp; all KPIs</button>
         <button id="btn-csv" type="button">Export CSV</button>
         <hr>
+        <button id="btn-auto" type="button" hidden>Turn on auto-save</button>
         <button id="btn-backup" type="button">Back up</button>
         <button id="btn-restore" type="button">Restore</button>
       </div>
@@ -441,7 +442,7 @@ function getFile(id){
 }
 function putFile(rec){return tx("files","readwrite",function(s){return s.put(rec)})}
 function delFile(id){return tx("files","readwrite",function(s){return s.delete(id)})}
-function saveDoc(){if(SNAP)return Promise.resolve();return tx("kv","readwrite",function(s){return s.put(doc,"doc")})}
+function saveDoc(){if(SNAP)return Promise.resolve();return tx("kv","readwrite",function(s){return s.put(doc,"doc")}).then(function(r){scheduleAuto();return r})}
 
 function normDoc(o){
   o=o&&typeof o==="object"?o:{};
@@ -513,7 +514,7 @@ function renderHome(){
     '<div class="hero-stats">'+[[atStd+" / "+doc.kpis.length,"KPIs at Standard or above"],[es.length,"Achievements logged"],[days>=0?days:"Ended",days>=0?"Days left in "+y:"Period "+y]].map(function(x){return '<div><b>'+esc(x[0])+'</b><span>'+esc(x[1])+'</span></div>'}).join("")+'</div>';
   var h="";
   if(doc.kpis.length&&Math.abs(tw-100)>.001)h+='<div class="note"><span class="grow"><b>Weights add up to '+esc(fmtNum(tw))+'%.</b> They should total 100%.</span><button class="btn small" type="button" data-settings>Edit KPIs</button></div>';
-  if(doc.entries.length&&!doc.lastBackup)h+='<div class="note"><span class="grow"><b>Not backed up yet.</b> Your log and evidence are only in this browser. Clearing browser data would remove them.</span><button class="btn small" type="button" data-backup>Back up now</button></div>';
+  h+=autoNote();
   $("#notes").innerHTML=SNAP?"":h;
   if(!doc.kpis.length){$("#cards").innerHTML='<div class="empty" style="grid-column:1/-1"><b>No KPIs yet</b>Add your KPIs to start logging, or restore a backup. Everything stays in this browser.<br><button class="btn primary" type="button" data-addkpi>+ Add KPI</button> <button class="btn" type="button" data-restore>Restore a backup</button></div>';return}
   $("#cards").innerHTML=doc.kpis.map(function(k){
@@ -585,7 +586,8 @@ function renderLog(){
   paintThumbs();
 }
 function renderStorage(){
-  var last=doc.lastBackup?"Last backup "+fmtDate(new Date(doc.lastBackup).toISOString().slice(0,10)):"No backup yet";
+  var last=autoStatus();
+  $("#btn-auto").hidden=!AS.ok;$("#btn-backup").hidden=AS.ok;$("#btn-auto").textContent=AS.state==="off"?"Turn on auto-save":"Turn off auto-save";
   var el=$("#storage");
   if(SNAP){el.textContent="Read-only copy. Nothing here can be changed or saved.";return}
   el.textContent="Saved in this browser only · "+last;
@@ -806,7 +808,7 @@ $("#restore-file").addEventListener("change",function(){
         var t=db.transaction(["kv","files"],"readwrite"),fs=t.objectStore("files");
         fs.clear();recs.forEach(function(r){fs.put(r)});t.objectStore("kv").put(nd,"doc");
         t.oncomplete=res;t.onerror=function(){rej(t.error)};t.onabort=function(){rej(t.error)};
-      }).then(function(){doc=nd;view={kpi:"",q:""};$("#f-q").value="";render();toast("Backup restored")});
+      }).then(function(){doc=nd;view={kpi:"",q:""};$("#f-q").value="";scheduleAuto();render();toast("Backup restored")});
     });
   }).catch(function(){toast("This file is not a valid KPI backup")});
 });
@@ -1108,6 +1110,101 @@ $("#btn-report").addEventListener("click",function(){
   }).catch(function(e){toast(e&&e.message==="library"?"Connect to the internet to build the report.":"Could not build the report. Try again.")}).then(function(){b.disabled=false;b.textContent=label});
 });
 
+/* ---------- auto-save: keeps a file the user chose up to date, in the same format Restore reads ---------- */
+var AS={ok:!SNAP&&typeof window.showSaveFilePicker==="function",h:null,state:"off",timer:null,busy:false,again:false,dirty:false};
+function docIsEmpty(){return !doc.kpis.length&&!doc.entries.length}
+function scheduleAuto(){
+  if(!AS.h)return;
+  AS.dirty=true;
+  if(AS.state!=="on")return;
+  clearTimeout(AS.timer);AS.timer=setTimeout(writeAuto,1000);
+}
+function writeAuto(){
+  if(AS.state!=="on"||!AS.h)return Promise.resolve();
+  if(AS.busy){AS.again=true;return Promise.resolve()}
+  // never let an empty browser wipe a good file
+  if(docIsEmpty()){AS.dirty=false;return Promise.resolve()}
+  AS.busy=true;AS.dirty=false;
+  var stamp=Date.now(),copy=JSON.parse(JSON.stringify(doc)),w=null;copy.lastBackup=stamp;
+  var metas=allFiles(),first=true;
+  // written piece by piece so large evidence never has to fit in one string; the file only changes on close
+  return AS.h.createWritable().then(function(x){
+    w=x;
+    return w.write('{"app":"individual-kpi","v":1,"exportedAt":'+stamp+',"doc":'+JSON.stringify(copy)+',"files":[');
+  }).then(function(){
+    return metas.reduce(function(p,m){return p.then(function(){
+      return getFile(m.id).then(function(r){
+        if(!r||!r.blob)return;
+        return b64(r.blob).then(function(d){
+          var piece=(first?"":",")+JSON.stringify({id:m.id,name:m.name,type:m.type,size:m.size,data:d});first=false;
+          return w.write(piece);
+        });
+      });
+    })},Promise.resolve());
+  }).then(function(){return w.write("]}")}).then(function(){return w.close()}).then(function(){
+    doc.lastBackup=stamp;
+    return tx("kv","readwrite",function(s){return s.put(doc,"doc")});
+  }).then(function(){renderStorage()}).catch(function(e){
+    if(w)try{w.abort().catch(function(){})}catch(x){}
+    AS.dirty=true;
+    AS.state=e&&e.name==="NotAllowedError"?"paused":"error";
+    render();
+  }).then(function(){
+    AS.busy=false;
+    if(AS.again){AS.again=false;return writeAuto()}
+  });
+}
+function autoOn(){
+  if(docIsEmpty()){toast("Add your KPIs or restore a backup first");return}
+  window.showSaveFilePicker({suggestedName:"individual-kpi-autosave.json",types:[{description:"KPI data",accept:{"application/json":[".json"]}}]}).then(function(h){
+    AS.h=h;AS.state="on";
+    return tx("kv","readwrite",function(s){return s.put(h,"autosave")}).then(function(){return writeAuto()}).then(function(){
+      render();if(AS.state==="on")toast("Auto-save is on. Every change now saves to "+h.name+".");
+    });
+  }).catch(function(e){if(!e||e.name!=="AbortError")toast("Could not turn on auto-save. Please try again.")});
+}
+function autoReconnect(){
+  if(!AS.h)return;
+  AS.h.requestPermission({mode:"readwrite"}).then(function(p){
+    if(p!=="granted"){toast("Auto-save stays paused until you allow access");return}
+    AS.state="on";return writeAuto().then(function(){render();if(AS.state==="on")toast("Auto-save reconnected")});
+  }).catch(function(){toast("Could not reconnect. Choose the file again.")});
+}
+function autoOff(){
+  clearTimeout(AS.timer);
+  tx("kv","readwrite",function(s){return s.delete("autosave")}).then(function(){
+    var n=AS.h?AS.h.name:"The file";AS.h=null;AS.state="off";AS.dirty=false;render();toast("Auto-save is off. "+n+" stays where it is.");
+  }).catch(function(){toast("Could not turn off auto-save. Please try again.")});
+}
+function autoNote(){
+  if(!AS.ok){
+    return doc.entries.length&&!doc.lastBackup?'<div class="note"><span class="grow"><b>Not backed up yet.</b> Your log and evidence are only in this browser. Clearing browser data would remove them.</span><button class="btn small" type="button" data-backup>Back up now</button></div>':"";
+  }
+  var n=AS.h?esc(AS.h.name):"";
+  if(AS.state==="paused")return '<div class="note"><span class="grow"><b>Auto-save is paused.</b> Reconnect so changes keep saving to '+n+'.</span><button class="btn small" type="button" data-auto="reconnect">Reconnect</button></div>';
+  if(AS.state==="error")return '<div class="note"><span class="grow"><b>Auto-save could not write to '+n+'.</b> It may have been moved or deleted. Your data is still in this browser.</span><button class="btn small" type="button" data-auto="on">Choose a file</button></div>';
+  if(AS.state==="off"&&doc.entries.length)return '<div class="note"><span class="grow"><b>Auto-save is off.</b> Your log and evidence are only in this browser. Clearing browser data would remove them.</span><button class="btn small" type="button" data-auto="on">Turn on auto-save</button></div>';
+  return "";
+}
+function autoStatus(){
+  var at=doc.lastBackup?new Date(doc.lastBackup):null,when=at?fmtDate(at.getFullYear()+"-"+pad(at.getMonth()+1)+"-"+pad(at.getDate()))+" "+pad(at.getHours())+":"+pad(at.getMinutes()):"";
+  if(!AS.ok)return doc.lastBackup?"Last backup "+when:"No backup yet";
+  if(AS.state==="on")return "Auto-saving to "+AS.h.name+(when?" · last saved "+when:"");
+  if(AS.state==="paused")return "Auto-save paused";
+  if(AS.state==="error")return "Auto-save needs attention";
+  return "Auto-save off";
+}
+function loadAuto(){
+  if(!AS.ok)return Promise.resolve();
+  return tx("kv","readonly",function(s){return s.get("autosave")}).then(function(h){
+    if(!h)return;
+    AS.h=h;
+    return h.queryPermission({mode:"readwrite"}).then(function(p){AS.state=p==="granted"?"on":"paused"});
+  }).catch(function(){});
+}
+$("#btn-auto").addEventListener("click",function(){if(AS.state==="off")autoOn();else autoOff()});
+window.addEventListener("beforeunload",function(ev){if(AS.state==="on"&&(AS.dirty||AS.busy)){ev.preventDefault();ev.returnValue=""}});
+
 /* ---------- page events ---------- */
 $("#btn-log").addEventListener("click",function(){openEntry(null)});
 window.addEventListener("hashchange",function(){window.scrollTo(0,0);render()});
@@ -1118,7 +1215,7 @@ $("#f-q").addEventListener("input",function(){view.q=this.value;renderLog()});
 document.addEventListener("click",function(ev){
   var c=ev.target.closest("[data-close]");
   if(c){c.closest("dialog").close();return}
-  var b=ev.target.closest("[data-log],[data-editkpi],[data-addkpi],[data-restore],[data-edit],[data-del],[data-file],[data-thumb],[data-settings],[data-backup]");if(!b)return;
+  var b=ev.target.closest("[data-log],[data-editkpi],[data-addkpi],[data-restore],[data-edit],[data-del],[data-file],[data-thumb],[data-settings],[data-backup],[data-auto]");if(!b)return;
   var d=b.dataset;
   if("log" in d)openEntry(null,d.log);
   else if("editkpi" in d)openKpi(d.editkpi);
@@ -1126,6 +1223,7 @@ document.addEventListener("click",function(ev){
   else if("restore" in d)$("#restore-file").click();
   else if("settings" in d)openSettings();
   else if("backup" in d)backup();
+  else if("auto" in d){if(d.auto==="reconnect")autoReconnect();else autoOn()}
     else if("edit" in d)openEntry(d.edit);
   else if("file" in d)openFile(d.entry,d.file);
   else if("thumb" in d)openFile(d.entry,d.thumb);
@@ -1153,6 +1251,8 @@ if(SNAP){
 }).then(function(saved){
   if(saved)doc=normDoc(saved);else saveDoc();
   if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+  return loadAuto();
+}).then(function(){
   render();
 }).catch(function(){
   render();
