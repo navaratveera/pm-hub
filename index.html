@@ -13,8 +13,11 @@
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
 .hero h1{margin:6px 0 8px;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.01em}
 .hero p{margin:0;max-width:62ch;color:var(--muted);font-size:15px}
-.group-title{margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
-.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding-bottom:40px}
+#tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:20px;padding-bottom:32px}
+#tools section{display:flex;flex-direction:column;min-width:0}
+.group-title{margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
+.tools{display:flex;flex-direction:column;gap:16px;flex:1}
+.tools .tool{flex:1}
 .tool{display:flex;flex-direction:column;gap:10px;border:1px solid var(--sky-200);border-radius:14px;padding:20px;background:var(--bg);text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
 a.tool:hover{border-color:var(--accent);box-shadow:0 10px 28px rgba(28,111,224,.14);transform:translateY(-2px)}
 .tool-ic{width:44px;height:44px;border-radius:11px;background:var(--sky-100);display:grid;place-items:center;color:var(--accent)}
