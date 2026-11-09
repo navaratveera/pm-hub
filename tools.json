@@ -10,15 +10,6 @@
       "group": "Project Management"
     },
     {
-      "id": "wbs",
-      "name": "Work Breakdown Structure",
-      "icon": "wbs",
-      "path": "wbs/",
-      "status": "soon",
-      "description": "Break a project into deliverables and work packages with automatic numbering, effort roll-up and a tree chart. Send work packages straight to the Timeline.",
-      "group": "Project Management"
-    },
-    {
       "id": "individual-kpi",
       "name": "Develop Team - Individual KPIs",
       "group": "Resource Management",
@@ -26,6 +17,15 @@
       "path": "individual-kpi/",
       "status": "live",
       "description": "Track your own KPIs against Min, Standard and Stretch targets. Log each achievement and attach evidence files, links or screenshots."
+    },
+    {
+      "id": "wbs",
+      "name": "Work Breakdown Structure",
+      "icon": "wbs",
+      "path": "wbs/",
+      "status": "soon",
+      "description": "Break a project into deliverables and work packages with automatic numbering, effort roll-up and a tree chart. Send work packages straight to the Timeline.",
+      "group": "Coming soon"
     }
   ]
 }
