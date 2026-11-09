@@ -19,7 +19,7 @@
 [hidden]{display:none!important}
 body{margin:0;background:var(--page);color:var(--ink);font:13.5px/1.5 var(--f-ui)}
 button,input,select,textarea{font:inherit;color:inherit}
-.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+.wrap{max-width:1400px;margin:0 auto;padding:0 24px}
 header.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;gap:12px;min-height:58px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;color:var(--ink);text-decoration:none}
@@ -99,14 +99,14 @@ button.stat[aria-pressed="true"]::after{content:"";position:absolute;left:0;righ
 .notes b{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
 .notes{padding:10px 15px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);white-space:pre-wrap}
 .tscroll{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:980px}
+table{border-collapse:collapse;width:100%;min-width:1200px}
 th{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:5px 3px;border-bottom:1px solid #EEF3F9;vertical-align:top}
 tr:last-child td{border-bottom:0}
 tbody tr:hover td{background:#FBFCFE}
 tr.cancel td{opacity:.6}
-tr.cancel textarea{text-decoration:line-through}
-.c-phase{width:136px;padding-left:12px}.c-status{width:140px}.c-pct{width:74px}.c-date{width:136px}.c-owner{width:100px}.c-x{width:30px}
+tr.cancel [data-f=name]{text-decoration:line-through}
+.c-phase{width:136px;padding-left:12px}.c-status{width:140px}.c-pct{width:74px}.c-date{width:136px}.c-owner{width:100px}.c-rem{width:220px}.c-x{width:30px}
 th.c-phase{padding-left:15px}
 th{padding-left:10px}
 td input,td textarea,td select{width:100%;border:1px solid var(--field);border-radius:6px;background-color:#fff;padding:5px 7px;min-height:32px}
@@ -168,7 +168,7 @@ dialog::backdrop{background:rgba(15,35,64,.4)}
     <span class="flabel">Owner</span>
     <div class="chips" id="owners" role="group" aria-label="Filter by owner unit"></div>
     <button class="clear" id="clear" type="button" hidden>Clear filters</button>
-    <input id="q" type="search" placeholder="Search activities" aria-label="Search activities">
+    <input id="q" type="search" placeholder="Search activities, remarks" aria-label="Search activities and remarks">
   </div>
   <div id="body"></div>
 </main>
@@ -210,8 +210,9 @@ function example(){
   var fill=[["Done",100,-70,-60],["Done",100,-60,-52],["Done",100,-58,-52],["Done",100,-50,-42],["Done",100,-42,-30],["Cancel",0,null,null],
    ["In Progress",60,-28,5],["At Risk",30,-5,6],["Delay",10,-6,-2],["Not Start",0,7,17],["Not Start",0,18,31],["Not Start",0,null,null],
    ["Not Start",0,32,36],["Not Start",0,37,38],["Not Start",0,39,39],["Not Start",0,40,54],["Not Start",0,40,70],["Not Start",0,71,75]];
+  var notes={5:"Covered by the architecture review",7:"Only one reviewer available this sprint",8:"Waiting for the non-prod environment",11:"Date to be confirmed with the security team"};
   return{id:nid(),example:true,type:"project",tag:"Example",name:"Example: Customer Portal",notes:"This example shows how to fill in each field. Change anything to try it, or delete it with Edit.",
-    acts:TEMPLATE.map(function(t,i){var f=fill[i];return A(t[0],t[1],f[0],f[1],f[2]==null?"":shift(f[2]),f[3]==null?"":shift(f[3]),t[2])})};
+    acts:TEMPLATE.map(function(t,i){var f=fill[i],a=A(t[0],t[1],f[0],f[1],f[2]==null?"":shift(f[2]),f[3]==null?"":shift(f[3]),t[2]);a.remarks=notes[i]||"";return a})};
 }
 function starter(){var e=example();return{current:e.id,projects:[e]}}
 
@@ -243,7 +244,7 @@ function match(p,a){
   if(filt.stat==="progress"&&a.status!=="In Progress")return false;
   if(filt.stat==="risk"&&!isRisk(a))return false;
   if(filt.stat==="nodates"&&!noDates(a))return false;
-  if(filt.q){var q=filt.q.toLowerCase();if((p.tag+" "+p.name+" "+a.phase+" "+a.name).toLowerCase().indexOf(q)<0)return false}
+  if(filt.q){var q=filt.q.toLowerCase();if((p.tag+" "+p.name+" "+a.phase+" "+a.name+" "+(a.remarks||"")).toLowerCase().indexOf(q)<0)return false}
   return true;
 }
 
@@ -290,11 +291,12 @@ function renderTracker(){
       '<td class="c-date"><input type="date" class="'+(a.start?"":"blank")+'" data-f="start" aria-label="Start date" value="'+esc(a.start)+'"></td>'+
       '<td class="c-date"><input type="date" class="'+(a.end?"":"blank")+'" data-f="end" aria-label="End date" value="'+esc(a.end)+'">'+flag+'</td>'+
       '<td class="c-owner"><select class="'+ownerCls(a.owner)+'" data-f="owner" aria-label="Owner unit">'+OWNERS.map(function(o){return '<option'+(o===a.owner?" selected":"")+'>'+esc(o)+'</option>'}).join("")+'</select></td>'+
+      '<td class="c-rem"><textarea rows="1" data-f="remarks" aria-label="Remarks" placeholder="Add a note">'+esc(a.remarks)+'</textarea></td>'+
       '<td class="c-x"><button class="x" type="button" data-del="'+esc(a.id)+'" aria-label="Delete '+esc(a.name)+'">✕</button></td></tr>';
   }).join("");
   var msg=!p.acts.length?"No activities yet. Add the first one below.":!acts.length?"No activities match these filters.":"";
   $("#body").innerHTML='<section class="group">'+(p.notes?'<div class="notes"><b>Scope</b>'+esc(p.notes)+'</div>':'')+
-    (msg?'<div class="nomatch">'+msg+'</div>':'<div class="tscroll"><table><thead><tr><th class="c-phase">Phase</th><th>Activity</th><th class="c-status">Status</th><th class="c-pct">%</th><th class="c-date">Start</th><th class="c-date">End</th><th class="c-owner">Owner</th><th class="c-x"></th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+    (msg?'<div class="nomatch">'+msg+'</div>':'<div class="tscroll"><table><thead><tr><th class="c-phase">Phase</th><th>Activity</th><th class="c-status">Status</th><th class="c-pct">%</th><th class="c-date">Start</th><th class="c-date">End</th><th class="c-owner">Owner</th><th class="c-rem">Remarks</th><th class="c-x"></th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
     '<div class="gfoot"><button class="link" type="button" data-addact="'+esc(p.id)+'">+ Add activity</button></div></section><datalist id="phases">'+PHASES.map(function(x){return '<option value="'+x+'">'}).join("")+'</datalist>';
   document.querySelectorAll('#body textarea').forEach(fit);
 }
@@ -332,7 +334,7 @@ $("#body").addEventListener("change",function(ev){
   var el=ev.target,f=el.dataset.f,tr=el.closest("tr");if(!f||!tr)return;
   var hit=findAct(tr.dataset.p,tr.dataset.a);if(!hit||!hit.a)return;
   var aid=hit.a.id;
-  var note=setField(hit.a,f,f==="name"||f==="phase"?el.value.trim():el.value);
+  var note=setField(hit.a,f,f==="name"||f==="phase"||f==="remarks"?el.value.trim():el.value);
   save();render();if(note)toast(note);
   var back=document.querySelector('tr[data-a="'+aid+'"] [data-f="'+f+'"]');if(back)back.focus({preventScroll:true});
 });
