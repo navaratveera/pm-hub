@@ -118,13 +118,15 @@ main.choosing .choice{border-color:#A9C9F3}
 .dup-row select{flex:1;min-width:0;border:1px solid var(--sky-200);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:12.5px;font-weight:500}
 .dup-row .btn{padding:6px 12px;font-size:12.5px}
 
-.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .stat{background:var(--bg);padding:12px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .stat .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .stat .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat .s{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
 .health{display:inline-flex;align-items:center;gap:6px}
 .health i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+@media(max-width:980px){.summary{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.summary{grid-template-columns:repeat(2,1fr)}}
 .mix{background:var(--bg);padding:12px 16px;grid-column:1/-1;display:flex;flex-direction:column;gap:8px}
 .mix-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--sky-100)}
 .mix-bar span{background:var(--c)}
@@ -175,6 +177,7 @@ main.choosing .choice{border-color:#A9C9F3}
 .seg button+button{border-left:1px solid var(--sky-200)}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 #chart svg{display:block}
+#chart svg.slide{width:min(100%,calc((100vh - 96px)*16/9));height:auto;margin:0 auto}
 #chart [data-go]{cursor:pointer}
 #chart [data-go]:hover polygon.fill{filter:brightness(1.07)}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
@@ -393,7 +396,7 @@ function normPlan(p){
   if(!lanes.length)lanes.push("General");
   return fixColors({id:String(p.id||uid()),name:String(p.name||"Untitled timeline"),subtitle:String(p.subtitle||""),sample:!!p.sample,
     holidays:(Array.isArray(p.holidays)?p.holidays:[]).filter(function(h){return h&&toN(h.date)!=null}).map(function(h){return{date:h.date,name:String(h.name||"Holiday")}}),
-    viewFrom:toN(p.viewFrom)!=null?p.viewFrom:"",viewTo:toN(p.viewTo)!=null?p.viewTo:"",scale:SCALES[p.scale]?p.scale:"day",showToday:p.showToday!==false,
+    viewFrom:toN(p.viewFrom)!=null?p.viewFrom:"",viewTo:toN(p.viewTo)!=null?p.viewTo:"",scale:SCALES[p.scale]?p.scale:"day",showToday:p.showToday!==false,chartFit:p.chartFit==="slide"?"slide":"full",hideSummary:!!p.hideSummary,
     lanes:lanes,platforms:nameList(p.platforms,items.map(function(it){return it.group})),platformColors:p.platformColors,
     items:items,createdAt:+p.createdAt||Date.now(),updatedAt:+p.updatedAt||0,
     history:(Array.isArray(p.history)?p.history:[]).filter(function(h){return h&&h.by}).slice(-30),
@@ -424,7 +427,7 @@ var example=freshExample();
 function cur(){return (curId&&plans[curId])||example}
 function sortedIds(){return Object.keys(plans).sort(function(a,b){return plans[b].updatedAt-plans[a].updatedAt})}
 function saveLocal(){lsSet(LS_PLANS,JSON.stringify(plans));if(curId)lsSet(LS_CUR,curId)}
-function wire(p){return{name:p.name,subtitle:p.subtitle,holidays:p.holidays,viewFrom:p.viewFrom,viewTo:p.viewTo,scale:p.scale,showToday:p.showToday,lanes:p.lanes,platforms:p.platforms,platformColors:p.platformColors,items:p.items,createdAt:p.createdAt,updatedAt:p.updatedAt,history:p.history,live:p.live}}
+function wire(p){return{name:p.name,subtitle:p.subtitle,holidays:p.holidays,viewFrom:p.viewFrom,viewTo:p.viewTo,scale:p.scale,showToday:p.showToday,chartFit:p.chartFit,hideSummary:p.hideSummary,lanes:p.lanes,platforms:p.platforms,platformColors:p.platformColors,items:p.items,createdAt:p.createdAt,updatedAt:p.updatedAt,history:p.history,live:p.live}}
 
 var timers={}, inflight={}, again={};
 function schedule(id){if(mode!=="cloud")return;clearTimeout(timers[id]);timers[id]=setTimeout(function(){flush(id)},800)}
@@ -509,7 +512,9 @@ document.getElementById("app").innerHTML=
          '<div class="seg" role="group" aria-label="Timeline scale">'+Object.keys(SCALES).map(function(k){return '<button type="button" data-scale="'+k+'">'+SCALES[k].label+'</button>'}).join("")+'</div>'+
          '<label class="field">From <input id="view-from" type="text" class="date-in" placeholder="dd/mm/yyyy" autocomplete="off"></label>'+
          '<label class="field">To <input id="view-to" type="text" class="date-in" placeholder="dd/mm/yyyy" autocomplete="off"></label>'+
+         '<div class="seg" role="group" aria-label="Chart size"><button type="button" data-fit="full" title="Tall enough for every row">Full</button><button type="button" data-fit="slide" title="Never taller than 16:9: fits a MacBook screen and a PowerPoint slide">Fit 16:9</button></div>'+
          '<label class="field check"><input id="show-today" type="checkbox"> Today</label>'+
+         '<label class="field check"><input id="show-summary" type="checkbox"> Summary</label>'+
          '<button id="btn-png" class="btn primary" type="button">Export PNG</button>'+
        '</div></div>'+
      '<div class="chart-scroll" id="chart-wrap"><div id="chart"></div></div>'+
@@ -624,6 +629,7 @@ function renderSummary(){
     '<div class="mix"><div class="mix-bar" role="img" aria-label="Activities by status">'+SKEYS.map(function(k){return cnt[k]?'<span style="--c:'+STATUS[k].c+';flex:'+cnt[k]+'" title="'+STATUS[k].en+': '+cnt[k]+'"></span>':""}).join("")+'</div>'+
       '<div class="mix-keys">'+SKEYS.map(function(k){return '<span style="--c:'+STATUS[k].c+'"><i></i>'+STATUS[k].en+' <b>'+cnt[k]+'</b></span>'}).join("")+'</div></div>'
   ].join("");
+  $("#summary").hidden=!!p.hideSummary;
   $("#count").textContent=plural(its.length,"row");
   $("#sub").textContent=has?fmtFull(a)+" – "+fmtFull(b)+" · "+plural(workdays(a,b,H),"working day"):"Add start and end dates to build the timeline";
 }
@@ -639,7 +645,35 @@ function tw(s,size,bold){ // rough text width; Thai glyphs are narrower than Lat
 function chev(x0,x1,y,h,tip){tip=Math.max(0,Math.min(tip,(x1-x0)/2));return x0+","+y+" "+(x1-tip)+","+y+" "+x1+","+(y+h/2)+" "+(x1-tip)+","+(y+h)+" "+x0+","+(y+h)}
 function wrapWords(s,max){var out=[],line="";String(s).split(/\s+/).forEach(function(w){if(!line)line=w;else if((line+" "+w).length<=max)line+=" "+w;else{out.push(line);line=w}});if(line)out.push(line);return out.slice(0,4)}
 
-function buildChart(p,availW,padR){
+// chart no taller than 16:9, for screens and slides: tries roomy rows first, then a larger canvas (which scales down on screen and on the slide)
+function buildSlide(p){
+  var Ws=[1280,1440,1600,1800,2000,2400], Rs=[30,27,24,22,20,19,18,17,16,15], html;
+  for(var i=0;i<Ws.length;i++)for(var j=0;j<Rs.length;j++){
+    var fit={W:Ws[i],H:Ws[i]*9/16,row:Rs[j],fail:false};
+    html=buildChart(p,fit.W,0,fit);
+    if(html==null)return null;
+    if(!fit.fail)return html;
+  }
+  return buildChart(p,2400,0,{W:2400,H:1350,row:15,force:true}); // more rows than any 16:9 slide can hold
+}
+// rotated strip names: use two lines when one does not fit the strip
+function stripLines(s){
+  var w=String(s).trim().split(/\s+/), best=[w.join(" ")], m=Infinity;
+  for(var i=1;i<w.length;i++){var a=w.slice(0,i).join(" "),b=w.slice(i).join(" "),l=Math.max(a.length,b.length);if(l<m){m=l;best=[a,b]}}
+  return best;
+}
+function stripNeed(s,fs){var two=stripLines(s);return Math.min(tw(s,fs,true),Math.max.apply(null,two.map(function(x){return tw(x,fs,true)})))+8}
+function vText(x,y,s,h,maxFs,fill,extra){
+  var lines=[s], fs=maxFs;
+  while(fs>8&&tw(s,fs,true)>h-6)fs-=.5;
+  if(tw(s,fs,true)>h-6){
+    var two=stripLines(s);
+    if(two.length>1){lines=two;fs=maxFs;while(fs>7.5&&Math.max(tw(two[0],fs,true),tw(two[1],fs,true))>h-6)fs-=.5}
+  }
+  var ys=lines.length>1?[-fs*.2,fs*.92]:[fs*.36];
+  return '<text transform="translate('+x+','+y+') rotate(-90)" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="'+fill+'"'+(extra||"")+'>'+lines.map(function(l,i){return '<tspan x="0" y="'+ys[i]+'">'+esc(l)+'</tspan>'}).join("")+'</text>';
+}
+function buildChart(p,availW,padR,fit){
   var H=holSet(p), its=p.items, t=today(), scale=SCALES[p.scale]?p.scale:"day";
   var a=Infinity,b=-Infinity,n;
   its.forEach(function(it){var sp=span(it);if(sp){a=Math.min(a,sp[0]);b=Math.max(b,finish(it))}});
@@ -677,7 +711,7 @@ function buildChart(p,availW,padR){
   // always fit the page width; columns never grow past a comfortable maximum
   // padR: blank space kept on the right so names beside the last bars are not cut off
   padR=padR||0;
-  var cw=Math.min(SCALES[scale].max,(availW-X0-padR)/N), W=X0+N*cw, SW=W+padR;
+  var cw=fit?(availW-X0-padR)/N:Math.min(SCALES[scale].max,(availW-X0-padR)/N), W=X0+N*cw, SW=W+padR;
   function cx(c){return X0+c*cw}
   function clamp(x){return Math.max(X0,Math.min(W,x))}
   // x where day d starts / ends on this scale
@@ -698,9 +732,10 @@ function buildChart(p,availW,padR){
   // geometry + row packing
   // compact rows so long plans stay a manageable height
   var ROWH=22, BH=17, TIP=7, FS=10.5, OFS=8.5;
+  if(fit){ROWH=fit.row;BH=Math.round(ROWH*.8);FS=Math.max(8.5,Math.min(12,BH*.72));OFS=Math.max(8,FS-1)}
   // a name sits inside its bar when it fits (stepping the font down a little); otherwise it goes beside the bar
   function fitText(s,max){
-    var sizes=[FS,9.5,8.5];
+    var sizes=fit?[FS,FS-.75]:[FS,9.5,8.5];
     for(var i=0;i<sizes.length;i++)if(tw(s,sizes[i],true)<=max)return{t:s,fs:sizes[i]};
     return null;
   }
@@ -735,7 +770,7 @@ function buildChart(p,availW,padR){
     geos.forEach(function(geo){if(!geo.ms)return;var r=0;while(r<msEnds.length&&msEnds[r]>geo.e0-8)r++;msEnds[r]=geo.e1;geo.row=r});
     geos.forEach(function(geo){
       if(geo.ms)return;
-      var r=floor;while(tEnds[r]!=null&&tEnds[r]>geo.e0+1)r++; // back-to-back activities stay on one row
+      var r=fit?0:floor;while(tEnds[r]!=null&&tEnds[r]>geo.e0+1)r++; // back-to-back activities stay on one row
       tEnds[r]=geo.e1;floor=r;geo.row=msEnds.length+r;
     });
     g.geo=geos;
@@ -744,7 +779,7 @@ function buildChart(p,availW,padR){
   if(!padR){
     var over=0;
     lanes.forEach(function(L){L.groups.forEach(function(g){g.geo.forEach(function(geo){if(geo.out&&geo.e1>W)over=Math.max(over,geo.e1-W)})})});
-    if(over>0)return buildChart(p,availW,Math.ceil(over)+8);
+    if(over>0)return buildChart(p,availW,Math.ceil(over)+8,fit);
   }
 
   // header groups (top row) and column labels (bottom row)
@@ -773,18 +808,31 @@ function buildChart(p,availW,padR){
   var LEGW=100, legendW=SKEYS.length*LEGW, legendBelow=W<legendW+Math.max(tw(title,21,true),tw(subtitle,14,true))+60;
   var TOP=10+(title?26:0)+(subtitle?22:0);
   var legY=legendBelow?TOP+6:10; if(legendBelow)TOP+=32; else TOP=Math.max(TOP,40);
-  var HY=TOP+8, WK=28, DR=20, BY=HY+WK+DR, y=BY;
+  var HY=TOP+8, WK=fit?24:28, DR=fit?18:20, BY=HY+WK+DR, y=BY;
   // each strip is at least as tall as its rotated name, so names are never cut short
-  lanes.forEach(function(L){
-    L.y=y;
-    L.groups.forEach(function(g){g.y=y;g.top=0;g.h=Math.max(g.rows*ROWH+6,g.name?tw(g.name,10.5,true)+14:0);y+=g.h});
-    var need=tw(L.name.toUpperCase(),11,true)+20, last=L.groups[L.groups.length-1];
-    if(y-L.y<need){last.h+=need-(y-L.y);y=L.y+need}
-    L.h=y-L.y;
-  });
-  var BOT=y, HT=BOT+12;
+  function layout(pad){
+    y=BY;
+    lanes.forEach(function(L){
+      L.y=y;
+      L.groups.forEach(function(g){g.y=y;g.top=0;g.h=Math.max(g.rows*ROWH+6,g.name?(fit?stripNeed(g.name,8):tw(g.name,10.5,true)+14):0)+pad;y+=g.h});
+      var need=fit?stripNeed(L.name.toUpperCase(),8.5):tw(L.name.toUpperCase(),11,true)+20, last=L.groups[L.groups.length-1];
+      if(y-L.y<need){last.h+=need-(y-L.y);y=L.y+need}
+      L.h=y-L.y;
+    });
+  }
+  layout(0);
+  if(fit&&!fit.force){
+    var room=fit.H-8-y, nR=0, nG=0;
+    if(room<0){fit.fail=true;return ""}
+    lanes.forEach(function(L){L.groups.forEach(function(g){nR+=g.rows;nG++})});
+    // share the spare height: first a little more space per row, the rest per project
+    ROWH+=Math.min(room/nR,ROWH*.3);
+    layout(0);
+    layout(Math.min(24,Math.max(0,(fit.H-8-y)/nG)));
+  }
+  var BOT=y, HT=BOT+(fit?8:12); // never taller than 16:9; a short plan stays short instead of padding out empty space
   var o=[];
-  o.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+SW+'" height="'+HT+'" viewBox="0 0 '+SW+' '+HT+'" font-family="'+FONT+'" role="img" aria-label="'+esc((title||"Timeline")+" chart")+'">');
+  o.push('<svg xmlns="http://www.w3.org/2000/svg"'+(fit?' class="slide"':'')+' width="'+SW+'" height="'+HT+'" viewBox="0 0 '+SW+' '+HT+'" font-family="'+FONT+'" role="img" aria-label="'+esc((title||"Timeline")+" chart")+'">');
   o.push('<rect width="'+SW+'" height="'+HT+'" fill="#FFFFFF"/>');
   if(title)o.push('<text x="2" y="28" font-size="21" font-weight="700" fill="'+C.ink+'">'+esc(title)+'</text>');
   if(subtitle)o.push('<text x="2" y="'+(title?50:28)+'" font-size="14" font-weight="700" fill="'+C.accent+'">'+esc(subtitle)+'</text>');
@@ -815,14 +863,16 @@ function buildChart(p,availW,padR){
   lanes.forEach(function(L,li){
     o.push('<rect x="0" y="'+L.y+'" width="'+LANEW+'" height="'+L.h+'" fill="'+(li%2?"#DCEBFB":"#EAF3FE")+'"/>');
     var lname=L.name.toUpperCase(), maxLen=Math.max(6,Math.floor((L.h-12)/7));
-    if(lname.length>maxLen)lname=lname.slice(0,maxLen-1)+"…";
-    o.push('<text transform="translate('+(LANEW/2+4)+','+(L.y+L.h/2)+') rotate(-90)" text-anchor="middle" font-size="11" font-weight="700" fill="'+C.ink+'" letter-spacing=".5">'+esc(lname)+'</text>');
+    if(fit)o.push(vText(LANEW/2,L.y+L.h/2,lname,L.h,11,C.ink));
+    else{if(lname.length>maxLen)lname=lname.slice(0,maxLen-1)+"…";
+    o.push('<text transform="translate('+(LANEW/2+4)+','+(L.y+L.h/2)+') rotate(-90)" text-anchor="middle" font-size="11" font-weight="700" fill="'+C.ink+'" letter-spacing=".5">'+esc(lname)+'</text>');}
     L.groups.forEach(function(g,gi){
       if(GROUPW){
         var sc=g.name&&p.platformColors[g.name];
         o.push('<rect x="'+LANEW+'" y="'+g.y+'" width="'+GROUPW+'" height="'+g.h+'" fill="'+(sc?tint(sc,.18):"#FFFFFF")+'" stroke="'+C.week+'" stroke-width=".75"/>');
         if(sc)o.push('<rect x="'+(LANEW+GROUPW-4)+'" y="'+g.y+'" width="4" height="'+g.h+'" fill="'+sc+'"/>');
-        if(g.name)o.push('<text transform="translate('+(LANEW+GROUPW/2+2)+','+(g.y+g.h/2)+') rotate(-90)" text-anchor="middle" font-size="10.5" font-weight="700" fill="'+(sc||C.head)+'">'+esc(g.name)+'</text>');
+        if(g.name&&fit)o.push(vText(LANEW+(GROUPW-4)/2,g.y+g.h/2,g.name,g.h,10.5,sc||C.head));
+        else if(g.name)o.push('<text transform="translate('+(LANEW+GROUPW/2+2)+','+(g.y+g.h/2)+') rotate(-90)" text-anchor="middle" font-size="10.5" font-weight="700" fill="'+(sc||C.head)+'">'+esc(g.name)+'</text>');
       }
       if(gi>0)o.push('<line x1="'+LANEW+'" y1="'+g.y+'" x2="'+W+'" y2="'+g.y+'" stroke="'+C.week+'" stroke-dasharray="4 4"/>');
     });
@@ -830,11 +880,11 @@ function buildChart(p,availW,padR){
   });
   // bars
   lanes.forEach(function(L){L.groups.forEach(function(g){(g.geo||[]).forEach(function(geo){
-    var it=geo.it, st=STATUS[it.status], ry=g.y+g.top+3+geo.row*ROWH+(ROWH-BH)/2, sp=span(it), ty=ry+BH/2+3.6;
+    var it=geo.it, st=STATUS[it.status], ry=g.y+g.top+3+geo.row*ROWH+(ROWH-BH)/2, sp=span(it), ty=ry+BH/2+FS*.343, mh=fit?Math.min(7,BH*.42):7;
     var tip=(it.name||"(untitled)")+" · "+(geo.ms?fmtFull(sp[0]):fmtFull(sp[0])+" – "+fmtFull(sp[1])+(geo.ext?" (revised to "+fmtFull(finish(it))+")":""))+" · "+st.en+(it.group?" · "+it.group:"");
     o.push('<g data-go="'+it.id+'"><title>'+esc(tip)+'</title>');
     if(geo.ms){
-      o.push('<polygon points="'+(geo.cx-7)+','+(ry+BH-3)+' '+geo.cx+','+(ry+3)+' '+(geo.cx+7)+','+(ry+BH-3)+'" fill="'+MS_COLOR+'" stroke="#FFFFFF" stroke-width="1"/>');
+      o.push('<polygon points="'+(geo.cx-mh)+','+(ry+BH-3)+' '+geo.cx+','+(ry+3)+' '+(geo.cx+mh)+','+(ry+BH-3)+'" fill="'+MS_COLOR+'" stroke="#FFFFFF" stroke-width="1"/>');
       o.push('<text x="'+(geo.left?geo.cx-11:geo.cx+11)+'" y="'+ty+'"'+(geo.left?' text-anchor="end"':'')+' font-size="'+(FS-.5)+'" font-weight="700" fill="'+C.ink+'">'+esc(geo.txt)+'</text>');
     }else{
       if(geo.ext)o.push('<polygon points="'+chev(geo.x0,geo.xR,ry,BH,TIP)+'" fill="#FFFFFF" fill-opacity=".85" stroke="'+st.c+'" stroke-width="1.5"/>');
@@ -855,16 +905,22 @@ function buildChart(p,availW,padR){
   return o.join("");
 }
 function renderChart(){
-  var wrap=$("#chart-wrap"), html=buildChart(cur(),Math.max(320,wrap.clientWidth-24));
+  var wrap=$("#chart-wrap"), html=cur().chartFit==="slide"?buildSlide(cur()):buildChart(cur(),Math.max(320,wrap.clientWidth-24));
   $("#chart").innerHTML=html||'<div class="empty">Add a start and end date to an activity below and the timeline builds itself.</div>';
   $("#view-from").value=dmy(cur().viewFrom); $("#view-to").value=dmy(cur().viewTo);
   $("#show-today").checked=cur().showToday!==false;
+  $("#show-summary").checked=!cur().hideSummary;
+  document.querySelectorAll("[data-fit]").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.fit===cur().chartFit))});
   document.querySelectorAll("[data-scale]").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.scale===cur().scale))});
 }
 document.querySelectorAll("[data-scale]").forEach(function(b){b.addEventListener("click",function(){
   if(cur().scale===b.dataset.scale)return; cur().scale=b.dataset.scale; touch();
 })});
 $("#show-today").addEventListener("change",function(){cur().showToday=this.checked;touch()});
+$("#show-summary").addEventListener("change",function(){cur().hideSummary=!this.checked;touch()});
+document.querySelectorAll("[data-fit]").forEach(function(b){b.addEventListener("click",function(){
+  if(cur().chartFit===b.dataset.fit)return; cur().chartFit=b.dataset.fit; touch();
+})});
 $("#chart").addEventListener("click",function(e){
   var g=e.target.closest("[data-go]"); if(!g)return;
   var tr=document.querySelector('tr[data-id="'+g.getAttribute("data-go")+'"]'); if(!tr)return;
@@ -1388,14 +1444,15 @@ function packV2(p,who,at){
     return r;
   });
   var cols=G.map(function(g){return String((p.platformColors||{})[g]||"").replace("#","")});
+  var flags=(p.showToday===false?1:0)|(p.chartFit==="slide"?2:0)|(p.hideSummary?4:0); // view settings; left out when all default
   return [2,p.id,who,Math.round(at/6e4),base,p.name,p.subtitle,["day","week","month"].indexOf(p.scale),d(p.viewFrom),d(p.viewTo),L,G,cols,
-    p.holidays.map(function(h){return[toN(h.date)-base,h.name]}),its].concat(p.showToday===false?[1]:[]);
+    p.holidays.map(function(h){return[toN(h.date)-base,h.name]}),its].concat(flags?[flags]:[]);
 }
 function unpackV2(a){
   var base=a[4], L=a[10], G=a[11], cols={};
   function d(v){return v===""||v==null?"":toS(base+v)}
   G.forEach(function(g,i){if(a[12][i])cols[g]="#"+a[12][i]});
-  return {id:a[1],by:a[2],at:a[3]*6e4,plan:{name:a[5],subtitle:a[6],scale:["day","week","month"][a[7]]||"day",showToday:a[15]!==1,viewFrom:d(a[8]),viewTo:d(a[9]),lanes:L,platforms:G,platformColors:cols,
+  return {id:a[1],by:a[2],at:a[3]*6e4,plan:{name:a[5],subtitle:a[6],scale:["day","week","month"][a[7]]||"day",showToday:!(a[15]&1),chartFit:a[15]&2?"slide":"full",hideSummary:!!(a[15]&4),viewFrom:d(a[8]),viewTo:d(a[9]),lanes:L,platforms:G,platformColors:cols,
     holidays:a[13].map(function(h){return{date:toS(base+h[0]),name:h[1]}}),
     items:a[14].map(function(r){return{id:r[0],lane:L[r[1]],group:r[2]===""||r[2]==null?"":G[r[2]],name:r[3],type:r[4]?"milestone":"task",start:d(r[5]),end:d(r[6]),revEnd:d(r[7]),status:SKEYS[r[8]||0]}})}};
 }
@@ -1548,7 +1605,7 @@ function liveMsg(m){
     live.retry=0; live.status="live"; live.me=m.me; live.peers=m.peers||[];
     p.live.role=m.role; if(m.view)p.live.view=m.view;
     var pending=live.base?diffSnap(live.base,p):null; // edits made while offline
-    var np=normPlan(Object.assign({},m.plan,{id:p.id,live:p.live,history:p.history,createdAt:p.createdAt,updatedAt:Date.now(),scale:p.scale,showToday:p.showToday,viewFrom:p.viewFrom,viewTo:p.viewTo}));
+    var np=normPlan(Object.assign({},m.plan,{id:p.id,live:p.live,history:p.history,createdAt:p.createdAt,updatedAt:Date.now(),scale:p.scale,showToday:p.showToday,chartFit:p.chartFit,hideSummary:p.hideSummary,viewFrom:p.viewFrom,viewTo:p.viewTo}));
     if(!np.name||np.name==="Untitled timeline")np.name=m.plan.name||p.name;
     plans[p.id]=np; live.base=snap(np);
     if(pending&&m.role==="edit"){applyPatch(np,pending,null);liveSend(true)}
