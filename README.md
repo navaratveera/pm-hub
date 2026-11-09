@@ -19,7 +19,7 @@ Use the export or backup option in each tool to keep a copy.
 index.html          hub page (cards are built from tools.json)
 tools.json          list of tools: name, icon, path, status, description
 shared/theme.css    shared colors and fonts
-shared/nav.js       shared header menu and footer
+shared/nav.js       shared header and footer
 timeline/           Timeline Planner
 individual-kpi/     Develop Team - Individual KPIs
 wbs/                Work Breakdown Structure (coming soon)
