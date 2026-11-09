@@ -13,6 +13,7 @@
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
 .hero h1{margin:6px 0 8px;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.01em}
 .hero p{margin:0;max-width:62ch;color:var(--muted);font-size:15px}
+.group-title{margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
 .tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding-bottom:40px}
 .tool{display:flex;flex-direction:column;gap:10px;border:1px solid var(--sky-200);border-radius:14px;padding:20px;background:var(--bg);text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
 a.tool:hover{border-color:var(--accent);box-shadow:0 10px 28px rgba(28,111,224,.14);transform:translateY(-2px)}
@@ -34,24 +35,31 @@ a.tool:hover{border-color:var(--accent);box-shadow:0 10px 28px rgba(28,111,224,.
     <h1>PM Hub</h1>
     <p>Plan, break down and track your projects. Open a tool and start your own: no sign-up needed.</p>
   </section>
-  <section id="tools" class="tools" aria-label="Tools"></section>
+  <div id="tools"></div>
   <div class="privacy"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" style="flex:none;margin-top:1px"><path d="M10 2 4 4.5v5c0 3.7 2.6 6.8 6 8 3.4-1.2 6-4.3 6-8v-5z" fill="none" stroke="#1C6FE0" stroke-width="1.6" stroke-linejoin="round"/></svg>
-    <span><b>Your work stays on your device.</b> Everything you create is saved in this browser only and is never sent to a server. Use Export CSV in each tool to back up or share.</span></div>
+    <span><b>Your work stays on your device.</b> Everything you create is saved in this browser only and is never sent to a server. Use the export or backup option in each tool to keep a copy.</span></div>
 </main>
 <script src="shared/nav.js" data-root="./"></script>
 <script>
 (function(){
   var ICONS={
     timeline:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="9" height="3.5" rx="1.2" fill="currentColor"/><rect x="8" y="10.25" width="11" height="3.5" rx="1.2" fill="currentColor" opacity=".55"/><rect x="5" y="15.5" width="8" height="3.5" rx="1.2" fill="currentColor"/></svg>',
+    kpi:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="13" width="4" height="7" rx="1.2" fill="currentColor"/><rect x="10" y="9" width="4" height="11" rx="1.2" fill="currentColor"/><rect x="16" y="4" width="4" height="16" rx="1.2" fill="currentColor"/></svg>',
     wbs:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="9" y="3" width="6" height="4.5" rx="1"/><rect x="2.5" y="16.5" width="6" height="4.5" rx="1"/><rect x="15.5" y="16.5" width="6" height="4.5" rx="1"/><path d="M12 7.5v4.5M5.5 16.5V12h13v4.5"/></svg>'
   };
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   PMHub.tools.then(function(tools){
-    document.getElementById("tools").innerHTML=tools.map(function(t){
+    function card(t){
       var live=t.status==="live", ic=ICONS[t.icon]||ICONS.timeline;
       var inner='<div class="tool-ic">'+ic+'</div><h2>'+esc(t.name)+'</h2><p>'+esc(t.description)+'</p>'+
         (live?'<span class="go">Open tool →</span>':'<span class="tag">Coming soon</span>');
       return live?'<a class="tool" href="'+esc(t.path)+'">'+inner+'</a>':'<div class="tool soon">'+inner+'</div>';
+    }
+    // groups appear in the order tools.json first mentions them
+    var groups=[];
+    tools.forEach(function(t){var g=t.group||"Tools";if(groups.indexOf(g)<0)groups.push(g)});
+    document.getElementById("tools").innerHTML=groups.map(function(g){
+      return '<section aria-label="'+esc(g)+'"><h2 class="group-title">'+esc(g)+'</h2><div class="tools">'+tools.filter(function(t){return (t.group||"Tools")===g}).map(card).join("")+'</div></section>';
     }).join("");
   });
 })();

@@ -8,9 +8,10 @@ Free project management tools that run in the browser: no sign-up, no server.
 |---|---|---|
 | Timeline Planner | [/timeline/](https://navaratveera.github.io/pm-hub/timeline/) | Live |
 | Work Breakdown Structure | /wbs/ | Coming soon |
+| Develop Team - Individual KPIs | [/individual-kpi/](https://navaratveera.github.io/pm-hub/individual-kpi/) | Live |
 
-Everything people create is saved in their own browser (localStorage) and never leaves their device.
-Use **Export CSV** in each tool to back up or share.
+Everything people create is saved in their own browser and never leaves their device.
+Use the export or backup option in each tool to keep a copy.
 
 ## Layout
 
@@ -20,6 +21,7 @@ tools.json          list of tools: name, icon, path, status, description
 shared/theme.css    shared colors and fonts
 shared/nav.js       shared header menu and footer
 timeline/           Timeline Planner
+individual-kpi/     Develop Team - Individual KPIs
 wbs/                Work Breakdown Structure (coming soon)
 ```
 
