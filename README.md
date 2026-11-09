@@ -7,6 +7,7 @@ Free project management tools that run in the browser: no sign-up, no server.
 | Tool | Link | Status |
 |---|---|---|
 | Timeline Planner | [/timeline/](https://navaratveera.github.io/pm-hub/timeline/) | Live |
+| Activity Tracker | [/activity-tracker/](https://navaratveera.github.io/pm-hub/activity-tracker/) | Live |
 | Develop Team - Individual KPIs | [/individual-kpi/](https://navaratveera.github.io/pm-hub/individual-kpi/) | Live |
 | Work Breakdown Structure | /wbs/ | Coming soon |
 
@@ -21,6 +22,7 @@ tools.json          list of tools: name, icon, path, status, description
 shared/theme.css    shared colors and fonts
 shared/nav.js       shared header and footer
 timeline/           Timeline Planner
+activity-tracker/   Activity Tracker
 individual-kpi/     Develop Team - Individual KPIs
 wbs/                Work Breakdown Structure (coming soon)
 ```

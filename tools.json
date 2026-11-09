@@ -10,6 +10,15 @@
       "group": "Project Management"
     },
     {
+      "id": "activity-tracker",
+      "name": "Activity Tracker",
+      "icon": "tracker",
+      "path": "activity-tracker/",
+      "status": "live",
+      "description": "Track every project activity by phase, with status, percent complete, dates and owner. See what is overdue, due soon or missing dates at a glance.",
+      "group": "Schedule Management"
+    },
+    {
       "id": "individual-kpi",
       "name": "Develop Team - Individual KPIs",
       "group": "Resource Management",
