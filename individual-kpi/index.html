@@ -177,7 +177,7 @@ main{padding:24px 0 12px}
 footer{padding:10px 0 26px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){.card,.seg-track i{transition:none}.card:hover{transform:none}}
 .ro-banner{background:var(--navy);color:#fff;text-align:center;font-size:13px;font-weight:600;padding:8px 16px}
-body.readonly [data-log],body.readonly [data-editkpi],body.readonly [data-addkpi],body.readonly [data-edit],body.readonly [data-del],body.readonly [data-settings],body.readonly [data-backup],body.readonly [data-restore],body.readonly .card-add,body.readonly .foot-btns,body.readonly .acts,body.readonly .ed,body.readonly #btn-log,body.readonly #btn-share,body.readonly #menu{display:none!important}
+body.readonly [data-log],body.readonly [data-editkpi],body.readonly [data-addkpi],body.readonly [data-edit],body.readonly [data-del],body.readonly [data-settings],body.readonly [data-backup],body.readonly [data-restore],body.readonly .card-add,body.readonly .foot-btns,body.readonly .acts,body.readonly .ed,body.readonly #btn-log,body.readonly #btn-share,body.readonly #btn-report,body.readonly #menu{display:none!important}
 /* dialogs */
 dialog{border:0;border-radius:16px;padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);box-shadow:0 18px 50px rgba(15,35,64,.28);color:var(--ink)}
 dialog.wide{width:min(980px,calc(100vw - 32px))}
@@ -248,6 +248,7 @@ table.kt tr:last-child td{border-bottom:0}
         <button id="btn-restore" type="button">Restore</button>
       </div>
     </details>
+    <button class="btn" id="btn-report" type="button">Download report</button>
     <button class="btn" id="btn-share" type="button">Share</button>
     <button class="btn primary" id="btn-log" type="button">+ Log achievement</button>
     <input id="restore-file" type="file" accept=".json,application/json" hidden>
@@ -831,6 +832,244 @@ $("#share-form").addEventListener("submit",function(ev){
     download(new Blob([PAGE_HTML.slice(0,at),'<script type="application/json" id="kpi-snapshot">',json,"<\/script>",PAGE_HTML.slice(at)],{type:"text/html"}),"KPI "+(who?who+" ":"")+isoToday()+".html");
     $("#d-share").close();toast("File created. Send it by email or Drive.");
   }).catch(function(){err.textContent="Could not create the file. Try leaving out the evidence files."}).then(function(){btn.disabled=false;btn.textContent="Create file"});
+});
+
+/* ---------- PDF report: evidence links are real links; images and PDFs become pages the report links to; other files are embedded ---------- */
+var PDFLIB_URL="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js", PDFLIB_SRI="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI";
+var RP={W:595.28,H:841.89,M:42,S:2.5,FF:'"Plus Jakarta Sans","Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif',ink:"#0F2340",muted:"#5B6E88",faint:"#8496AD",blue:"#1559B5",line:"#E1E9F4",track:"#E6F0FD",navy:"#10294F",
+  lv:{below:["#C2410C","#FDEEE6"],min:["#A16207","#FBF3D9"],standard:["#1559B5","#E3EEFC"],stretch:["#15803D","#E2F5E8"]}};
+function loadPdfLib(){return new Promise(function(res,rej){
+  if(window.PDFLib){res(window.PDFLib);return}
+  var s=document.createElement("script");s.src=PDFLIB_URL;s.integrity=PDFLIB_SRI;s.crossOrigin="anonymous";
+  s.onload=function(){res(window.PDFLib)};s.onerror=function(){rej(new Error("library"))};document.head.appendChild(s);
+})}
+function loadReportFonts(){
+  if(!document.fonts||!document.fonts.load)return Promise.resolve();
+  var all=[];[400,500,600,700].forEach(function(w){all.push(document.fonts.load(w+' 12px "Noto Sans Thai"',"ก่ำ"));all.push(document.fonts.load(w+' 12px "Plus Jakarta Sans"',"A"))});
+  return Promise.all(all).catch(function(){});
+}
+function canvasBytes(cv,type,q){return new Promise(function(res,rej){cv.toBlob(function(b){b?b.arrayBuffer().then(res,rej):rej(new Error("canvas"))},type,q)})}
+function pdfUrl(l){var u=safeUrl(l)||(/^[\w-]+(\.[\w-]+)+([/?#].*)?$/.test(l)?safeUrl("https://"+l):null);return u?u.replace(/[()\\]/g,function(c){return encodeURIComponent(c).replace("(","%28").replace(")","%29")}):null}
+// image evidence is redrawn so phone photos keep their rotation and large photos don't bloat the report
+function readImage(blob,type){return new Promise(function(res,rej){
+  var u=URL.createObjectURL(blob),img=new Image();
+  img.onload=function(){
+    URL.revokeObjectURL(u);
+    var w=img.naturalWidth,h=img.naturalHeight,f=Math.min(1,2400/Math.max(w,h,1));
+    if(!w||!h){rej(new Error("image"));return}
+    var cv=document.createElement("canvas");cv.width=Math.round(w*f);cv.height=Math.round(h*f);
+    var x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);x.drawImage(img,0,0,cv.width,cv.height);
+    var jpg=/jpe?g|webp|heic/i.test(type);
+    canvasBytes(cv,jpg?"image/jpeg":"image/png",.88).then(function(b){res({bytes:b,jpg:jpg})},rej);
+  };
+  img.onerror=function(){URL.revokeObjectURL(u);rej(new Error("image"))};img.src=u;
+})}
+function prepareEvidence(L,list){
+  var out={},seq=[],n=0,p=Promise.resolve();
+  list.forEach(function(e){e.files.forEach(function(m){p=p.then(function(){
+    return getFile(m.id).then(function(r){
+      if(!r||!r.blob){out[m.id]={kind:"missing",meta:m,entry:e};return}
+      var ev={meta:m,entry:e,no:"E"+(++n),blob:r.blob,kind:"attach"};out[m.id]=ev;seq.push(ev);
+      if(m.type==="application/pdf"||/\.pdf$/i.test(m.name))return r.blob.arrayBuffer().then(function(b){return L.PDFDocument.load(b,{updateMetadata:false})}).then(function(src){if(src.getPageCount()){ev.kind="pdf";ev.src=src}}).catch(function(){});
+      if(/^image\//i.test(m.type))return readImage(r.blob,m.type).then(function(i){ev.kind="image";ev.img=i}).catch(function(){});
+    });
+  })})});
+  return p.then(function(){return{byId:out,seq:seq}});
+}
+function reportPainter(){
+  var R=RP,pages=[],links=[],c,pg=-1,y=0,seg=window.Intl&&Intl.Segmenter?new Intl.Segmenter("th",{granularity:"word"}):null,gr=window.Intl&&Intl.Segmenter?new Intl.Segmenter("th",{granularity:"grapheme"}):null;
+  var P={links:links,pages:pages,anchors:{},
+    get y(){return y},set y(v){y=v},get pg(){return pg},get c(){return c},
+    font:function(s,w){return (w||400)+" "+s+"px "+R.FF},
+    page:function(){var cv=document.createElement("canvas");cv.width=Math.round(R.W*R.S);cv.height=Math.round(R.H*R.S);c=cv.getContext("2d");c.scale(cv.width/R.W,cv.height/R.H);c.fillStyle="#fff";c.fillRect(0,0,R.W,R.H);pages.push(cv);pg=pages.length-1;y=R.M},
+    need:function(h){if(y+h>R.H-48)P.page()},
+    box:function(x,yy,w,h,r,col){c.fillStyle=col;c.beginPath();c.moveTo(x+r,yy);c.arcTo(x+w,yy,x+w,yy+h,r);c.arcTo(x+w,yy+h,x,yy+h,r);c.arcTo(x,yy+h,x,yy,r);c.arcTo(x,yy,x+w,yy,r);c.closePath();c.fill()},
+    wrap:function(text,w,f){
+      c.font=f;var out=[];
+      String(text==null?"":text).split(/\r?\n/).forEach(function(par){
+        var toks=seg?Array.from(seg.segment(par),function(s){return s.segment}):par.split(/(?<=\s)/),cur="";
+        toks.forEach(function(t){
+          if(c.measureText(cur+t).width<=w){cur+=t;return}
+          if(cur.trim()){out.push(cur.trim());cur=""}
+          t=t.replace(/^\s+/,"");
+          if(c.measureText(t).width<=w){cur=t;return}
+          (gr?Array.from(gr.segment(t),function(s){return s.segment}):Array.from(t)).forEach(function(g){if(c.measureText(cur+g).width>w&&cur){out.push(cur);cur=""}cur+=g});
+        });
+        out.push(cur.trim());
+      });
+      return out;
+    },
+    para:function(text,x,w,s,wt,col,o){
+      o=o||{};var f=P.font(s,wt),lh=o.lh||s*1.5;
+      P.wrap(text,w,f).forEach(function(l){
+        P.need(lh);c.font=f;c.fillStyle=col;c.fillText(l,x,y+s*1.08);
+        var tw=c.measureText(l).width;
+        if(o.link){if(o.underline!==false)c.fillRect(x,y+s*1.08+1.6,tw,.6);links.push(Object.assign({pg:pg,x:x-1,y:y-1,w:tw+2,h:lh+1},o.link))}
+        y+=lh;
+      });
+    },
+    pill:function(text,right,yy,col){var f=P.font(8.5,700);c.font=f;var w=c.measureText(text).width+14;P.box(right-w,yy,w,15,7.5,col[1]);c.fillStyle=col[0];c.font=f;c.fillText(text,right-w+7,yy+10.8);return w},
+    bars:function(k,a,x,w){
+      var from=0,gap=8,sw=(w-2*gap)/3;
+      [["Min",k.min],["Standard",k.std],["Stretch",k.stretch]].forEach(function(t,i){
+        var span=t[1]-from,p=Math.max(0,Math.min(span>0?(a-from)/span:(a>=t[1]?1:0),1)),ok=t[1]>0&&a>=t[1],sx=x+i*(sw+gap);from=t[1];
+        P.box(sx,y,sw,5,2.5,R.track);if(p>0)P.box(sx,y,Math.max(sw*p,5),5,2.5,ok?R.lv.stretch[0]:"#1C6FE0");
+        c.font=P.font(8,500);c.fillStyle=R.muted;c.fillText(t[0],sx,y+16);
+        var v=fmtNum(t[1]);c.font=P.font(8,700);c.fillStyle=ok?R.lv.stretch[0]:R.ink;c.fillText(v,sx+sw-c.measureText(v).width,y+16);
+      });
+      y+=24;
+    }};
+  P.page();return P;
+}
+function paintReport(P,ev,yearEntries,pct){
+  var R=RP,M=R.M,CW=R.W-2*M,p=doc.profile,c=P.c,right=R.W-M;
+  var sub=[p.role,p.level,p.department===p.team?p.department:[p.department,p.team].filter(Boolean).join(" / ")].filter(Boolean).join(" · ");
+  var atStd=doc.kpis.filter(function(k){return k.std>0&&actual(k.id)>=k.std}).length;
+  // summary band
+  P.box(M,M,CW,104,12,R.navy);
+  var top=M+18;c.fillStyle="#9FC3EE";c.font=P.font(8.5,700);c.fillText((p.period+" "+p.year+" · KPI REPORT").toUpperCase(),M+18,top+8);
+  c.fillStyle="#fff";c.font=P.font(19,700);c.fillText(P.wrap(p.name||"My KPIs",CW-130,P.font(19,700))[0],M+18,top+32);
+  c.fillStyle="#C9D8EC";c.font=P.font(9,400);c.fillText(P.wrap(sub,CW-130,P.font(9,400))[0]||"",M+18,top+49);
+  c.fillStyle="#C9D8EC";c.font=P.font(9,600);c.fillText(atStd+" of "+doc.kpis.length+" KPIs at Standard   ·   "+yearEntries.length+" achievements   ·   "+fmtDate(isoToday()),M+18,top+69);
+  var cx=right-54,cy=M+52;c.lineCap="round";c.lineWidth=6;c.strokeStyle="rgba(255,255,255,.15)";c.beginPath();c.arc(cx,cy,30,0,Math.PI*2);c.stroke();
+  if(pct>0){c.strokeStyle="#7CC0FF";c.beginPath();c.arc(cx,cy,30,-Math.PI/2,-Math.PI/2+Math.PI*2*pct/100);c.stroke()}
+  var pt=pct+"%";c.fillStyle="#fff";c.font=P.font(14,700);c.fillText(pt,cx-c.measureText(pt).width/2,cy+5);
+  c.fillStyle="#C9D8EC";c.font=P.font(7,500);var cap="Progress to Standard";c.fillText(cap,cx-c.measureText(cap).width/2,cy+44);
+  P.y=M+122;
+  // table of KPIs
+  P.para("KPI summary",M,CW,12,700,R.ink);P.y+=3;
+  var cols={w:M+262,a:M+304,t:M+362};
+  function thead(){c=P.c;c.font=P.font(7.5,700);c.fillStyle=R.faint;c.fillText("KPI",M,P.y+8);c.fillText("WEIGHT",cols.w,P.y+8);c.fillText("ACHIEVED",cols.a,P.y+8);c.fillText("MIN / STD / STRETCH",cols.t,P.y+8);P.y+=14;c.fillStyle=R.line;c.fillRect(M,P.y,CW,.7);P.y+=6}
+  thead();
+  doc.kpis.forEach(function(k){
+    var a=actual(k.id),lv=level(k,a),ls=P.wrap(k.name,250,P.font(9.5,600)),h=Math.max(ls.length*14,16)+8;
+    if(P.y+h>R.H-48){P.page();thead()}
+    c=P.c;var y0=P.y;
+    P.para(k.name,M,250,9.5,600,R.blue,{lh:14,link:{dest:"kpi:"+k.id},underline:false});
+    c.font=P.font(9,500);c.fillStyle=R.muted;c.fillText(fmtNum(k.weight)+"%",cols.w,y0+10);
+    c.font=P.font(9,700);c.fillStyle=R.ink;c.fillText(fmtNum(a),cols.a,y0+10);
+    c.font=P.font(9,500);c.fillStyle=R.muted;c.fillText(fmtNum(k.min)+" / "+fmtNum(k.std)+" / "+fmtNum(k.stretch),cols.t,y0+10);
+    P.pill(lv[1],right,y0-1,R.lv[lv[0]]);
+    P.y=y0+h-3;c.fillStyle=R.line;c.fillRect(M,P.y-1,CW,.5);P.y+=3;
+  });
+  P.y+=16;
+  // one section per KPI
+  doc.kpis.forEach(function(k){
+    var a=actual(k.id),lv=level(k,a),list=kpiEntries(k.id);
+    P.need(120);c=P.c;
+    P.anchors["kpi:"+k.id]={pg:P.pg,y:P.y};
+    c.fillStyle=R.lv[lv[0]][0];c.fillRect(M,P.y,CW,1.6);P.y+=9;
+    var y0=P.y;P.para(k.name,M,CW-80,13,700,R.ink);P.pill(lv[1],right,y0+1,R.lv[lv[0]]);
+    if(k.def)P.para(k.def,M,CW,9,400,R.muted);
+    P.y+=4;c=P.c;
+    c.font=P.font(17,700);c.fillStyle=R.ink;var an=fmtNum(a);c.fillText(an,M,P.y+15);var ax=M+c.measureText(an).width+5;
+    c.font=P.font(9,500);c.fillStyle=R.muted;var unit=unitFor(k,a);c.fillText(unit,ax,P.y+15);ax+=c.measureText(unit).width+10;
+    c.fillStyle=R.faint;c.fillText(nextStep(k,a)+"   ·   Weight "+fmtNum(k.weight)+"%",ax,P.y+15);
+    P.y+=24;P.bars(k,a,M,CW);P.y+=2;
+    if(!list.length){P.para("Nothing logged for this KPI yet.",M,CW,9,400,R.faint);P.y+=14;return}
+    list.forEach(function(e){
+      var est=34+(e.details?P.wrap(e.details,CW-12,P.font(9,400)).length*13.5:0)+(e.files.length+e.links.length)*14;
+      P.need(Math.min(est,240));c=P.c;
+      P.anchors[e.id]={pg:P.pg,y:P.y};
+      var y1=P.y,pgs=P.pg;
+      c.font=P.font(8,600);c.fillStyle=R.faint;var dt=fmtDate(e.date)+"   ·   +"+fmtNum(e.qty)+" "+unitFor(k,e.qty);c.fillText(dt,M+12,P.y+9);P.y+=13;
+      P.para(e.title,M+12,CW-12,10.5,600,R.ink);
+      if(e.details)P.para(e.details,M+12,CW-12,9,400,R.muted);
+      e.files.forEach(function(m){evidenceRow(P,ev.byId[m.id],m)});
+      e.links.forEach(function(l){
+        var u=pdfUrl(l);P.need(13);P.c.font=P.font(8,700);P.c.fillStyle=R.faint;P.c.fillText("Link",M+12,P.y+9);
+        P.para(u||l,M+36,CW-36,8.5,500,u?R.blue:R.muted,u?{lh:13,link:{url:u}}:{lh:13});
+      });
+      c=P.c;
+      if(P.pg===pgs){c.fillStyle=R.lv[lv[0]][1];c.fillRect(M+2,y1,2,P.y-y1)}
+      P.y+=9;
+    });
+    P.y+=14;
+  });
+}
+function evidenceRow(P,ev,m){
+  var R=RP,x=R.M+12,w=R.W-2*R.M-12,size=m.size?" · "+fmtSize(m.size):"";
+  if(!ev||ev.kind==="missing"){P.para(m.name+" (file not available)",x,w,8.5,500,R.faint,{lh:13});return}
+  P.need(13);P.c.font=P.font(8,700);P.c.fillStyle=R.faint;P.c.fillText(ev.no,x,P.y+9);
+  if(ev.kind==="attach"){
+    P.links.push({pg:P.pg,x:x+24,y:P.y-1,w:13,h:14,attach:ev});
+    P.para(m.name+size+"  Attached file: double-click the clip in Adobe Acrobat Reader",x+40,w-40,8.5,500,R.muted,{lh:13});
+    return;
+  }
+  P.para(m.name+size,x+24,w-24,8.5,500,R.blue,{lh:13,link:{dest:"ev:"+ev.no}});
+}
+function appendixHeader(P,ev,note){
+  var R=RP,M=R.M,CW=R.W-2*M,k=kpiById(ev.entry.kpiId);
+  P.page();
+  P.anchors["ev:"+ev.no]={pg:P.pg,y:0};
+  P.para("Evidence "+ev.no+"  "+ev.meta.name,M,CW,11,700,R.ink);
+  P.para((k?k.name+"  ·  ":"")+ev.entry.title+"  ·  "+fmtDate(ev.entry.date),M,CW,8.5,400,R.muted);
+  P.para("Back to the achievement",M,CW,8.5,600,R.blue,{lh:14,link:{dest:ev.entry.id}});
+  if(note)P.para(note,M,CW,8.5,400,R.muted);
+  P.y+=6;
+}
+function buildReport(L){
+  var R=RP,yearEntries=doc.kpis.reduce(function(a,k){return a.concat(kpiEntries(k.id))},[]);
+  var tw=totalWeight(),pct=Math.round((tw?doc.kpis.reduce(function(s,k){return s+k.weight*(k.std>0?Math.min(actual(k.id)/k.std,1):0)},0)/tw:0)*100);
+  return prepareEvidence(L,yearEntries).then(function(ev){
+    var P=reportPainter();paintReport(P,ev,yearEntries,pct);
+    var after={};
+    // evidence pages come after the report, each with a way back
+    ev.seq.forEach(function(x){
+      if(x.kind==="image"){appendixHeader(P,x);after[P.pg]={img:x,top:P.y}}
+      else if(x.kind==="pdf"){var n=x.src.getPageCount();appendixHeader(P,x,"The original PDF follows ("+n+(n===1?" page":" pages")+").");after[P.pg]={pdf:x}}
+    });
+    var extra=ev.seq.reduce(function(a,x){return a+(x.kind==="pdf"?x.src.getPageCount():0)},0),total=P.pages.length+extra;
+    return L.PDFDocument.create().then(function(d){
+      var who=doc.profile.name||"";d.setTitle("KPI report"+(who?" - "+who:""));d.setAuthor(who);d.setCreator("PM Hub Individual KPIs");d.setProducer("PM Hub");
+      var refs=[],chain=Promise.resolve();
+      P.pages.forEach(function(cv,i){chain=chain.then(function(){
+        var x=cv.getContext("2d");x.font=P.font(7.5,500);x.fillStyle=R.faint;
+        return Promise.resolve().then(function(){
+          var left=(who?who+"  ·  ":"")+"KPI report",rt="Page "+pageNo(i,after)+" of "+total;
+          x.fillText(left,R.M,R.H-24);x.fillText(rt,R.W-R.M-x.measureText(rt).width,R.H-24);
+          return canvasBytes(cv,"image/png");
+        }).then(function(b){return d.embedPng(b)}).then(function(png){
+          var pg=d.addPage([R.W,R.H]);pg.drawImage(png,{x:0,y:0,width:R.W,height:R.H});refs[i]=pg;cv.width=cv.height=0;
+          var a=after[i];if(!a)return;
+          if(a.img){
+            return (a.img.img.jpg?d.embedJpg(a.img.img.bytes):d.embedPng(a.img.img.bytes)).then(function(im){
+              var aw=R.W-2*R.M,ah=R.H-a.top-48,f=Math.min(aw/im.width,ah/im.height,1.5),w=im.width*f,h=im.height*f;
+              pg.drawImage(im,{x:(R.W-w)/2,y:R.H-a.top-h,width:w,height:h});
+            });
+          }
+          return d.copyPages(a.pdf.src,a.pdf.src.getPageIndices()).then(function(cp){cp.forEach(function(q){d.addPage(q)})});
+        });
+      })});
+      return chain.then(function(){
+        var ctx=d.context,atts=[];
+        return P.links.reduce(function(pr,l){return pr.then(function(){
+          var page=refs[l.pg],r=[l.x,R.H-l.y-l.h,l.x+l.w,R.H-l.y],a={Type:"Annot",Border:[0,0,0],Rect:r,F:4};
+          if(l.url){a.Subtype="Link";a.A={Type:"Action",S:"URI",URI:L.PDFString.of(l.url)}}
+          else if(l.dest){var t=P.anchors[l.dest];if(!t)return;a.Subtype="Link";a.Dest=[refs[t.pg].ref,"XYZ",null,R.H-t.y+4,null]}
+          else if(l.attach){return l.attach.blob.arrayBuffer().then(function(b){
+            var m=l.attach.meta;return d.attach(new Uint8Array(b),m.name,{mimeType:m.type||"application/octet-stream",description:"Evidence "+l.attach.no}).then(function(){
+              var ef=d.embeddedFiles&&d.embeddedFiles[d.embeddedFiles.length-1];atts.push(m.name);if(!ef||!ef.ref)return;
+              a.Subtype="FileAttachment";a.FS=ef.ref;a.Name="Paperclip";a.Contents=L.PDFHexString.fromText(m.name);a.T=L.PDFHexString.fromText("Evidence "+l.attach.no);
+              page.node.addAnnot(ctx.register(ctx.obj(a)));
+            });
+          })}
+          page.node.addAnnot(ctx.register(ctx.obj(a)));
+        })},Promise.resolve()).then(function(){return d.save()}).then(function(bytes){return{bytes:bytes,attached:atts.length}});
+      });
+    });
+  });
+}
+// pages of a copied PDF sit between canvases, so count them when numbering
+function pageNo(i,after){var n=i+1;for(var j=0;j<i;j++){var a=after[j];if(a&&a.pdf)n+=a.pdf.src.getPageCount()}return n}
+$("#btn-report").addEventListener("click",function(){
+  if(!doc.kpis.length){toast("Add your KPIs first");return}
+  var b=this,label=b.textContent;b.disabled=true;b.textContent="Building…";
+  loadPdfLib().catch(function(){throw new Error("library")}).then(function(L){return loadReportFonts().then(function(){return buildReport(L)})}).then(function(out){
+    var who=(doc.profile.name||"").replace(/[\\/:*?"<>|]+/g,"").trim();
+    download(new Blob([out.bytes],{type:"application/pdf"}),"KPI Report "+(who?who+" ":"")+isoToday()+".pdf");
+    toast(out.attached?"Report saved. "+out.attached+" attached file"+(out.attached===1?"":"s")+" open in Adobe Acrobat Reader.":"Report saved");
+  }).catch(function(e){toast(e&&e.message==="library"?"Connect to the internet to build the report.":"Could not build the report. Try again.")}).then(function(){b.disabled=false;b.textContent=label});
 });
 
 /* ---------- page events ---------- */
