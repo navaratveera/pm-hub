@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Risk Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --ink:#0F2340;--ink-2:#33475F;--muted:#5B6E88;--faint:#8496AD;--accent:#1C6FE0;--accent-dark:#1559B5;--navy:#10294F;--navy-2:#1A3A6B;
+  --bg:#FFFFFF;--page:#F6F9FE;--sky-50:#F3F8FF;--sky-100:#E6F0FD;--sky-200:#CFE0F7;--line:#E1E9F4;--line-2:#EEF3F9;--field:#C9D5E4;--field-hover:#9FB2C9;
+  --low:#166534;--low-bg:#D7F0DF;--med:#854D0E;--med-bg:#FFF0B8;--high:#9A3412;--high-bg:#FFD8BC;--crit:#991B1B;--crit-bg:#F8C3BF;
+  --ok:#15803D;--late:#B42318;
+  --f-ui:"Plus Jakarta Sans","Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --shadow:0 1px 2px rgba(15,35,64,.05),0 4px 14px rgba(15,35,64,.05);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--page);color:var(--ink);font:13.5px/1.5 var(--f-ui);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1400px;margin:0 auto;padding:0 24px}
+@media(max-width:600px){.wrap{padding:0 16px}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.b-low{--d:var(--low);--bg:var(--low-bg);--fill:#3FA66A}.b-medium{--d:var(--med);--bg:var(--med-bg);--fill:#E3B341}.b-high{--d:var(--high);--bg:var(--high-bg);--fill:#EA8A3E}.b-critical{--d:var(--crit);--bg:var(--crit-bg);--fill:#D64545}
+
+header.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:12px;min-height:56px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;color:var(--ink);text-decoration:none}
+.crumb{color:var(--faint)}
+.saved{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.saved svg{color:var(--ok)}
+.saved.bad{color:var(--late)}.saved.bad svg{color:var(--late)}
+
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--field);background:#fff;border-radius:7px;padding:0 13px;min-height:36px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--ink)}
+.btn:hover{border-color:var(--field-hover);background:#FBFCFE}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-dark)}
+.btn.dark{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.dark:hover{background:var(--navy-2)}
+.btn.small{min-height:30px;padding:0 10px;font-size:12px}
+.btn.icon{padding:0 9px}
+.btn.danger{color:var(--late);border-color:#F1C7C2}
+.btn.danger:hover{background:#FEF3F2}
+
+/* project bar */
+.pbar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px 24px;flex-wrap:wrap;margin:20px 0 14px}
+.pbar-l{min-width:0;flex:1 1 320px}
+.eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-dark)}
+h1{margin:3px 0 6px;font-size:22px;line-height:1.2;letter-spacing:-.02em;font-weight:800}
+.meta{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12.5px;color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:600}
+.pbar-r{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 14px 34px rgba(15,35,64,.16);min-width:230px;padding:5px}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;border-radius:6px;padding:8px 11px;cursor:pointer;font-size:13px}
+.menu button:hover{background:var(--sky-50)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.menu .warn{color:var(--late)}
+
+.note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12.5px;color:var(--muted)}
+.note b{color:var(--ink)}
+.note .link{margin-left:auto}
+.link{border:0;background:none;color:var(--accent-dark);font-weight:600;cursor:pointer;padding:0;font-size:12.5px}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpis .kpi:first-child{grid-column:span 2}}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow);min-width:0;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--fill,var(--accent))}
+.kpi .l{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.25;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:11.5px;color:var(--muted)}
+.kpi.k-late .v{color:var(--late)}
+.kpi .v small{font-size:14px;color:var(--muted);font-weight:600}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:14px}
+@media(max-width:1020px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);min-width:0}
+.card+.card{margin-top:14px}
+.card-h{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.card-h h2{margin:0;font-size:14px;font-weight:700}
+.card-h .sub{color:var(--muted);font-size:12px}
+.card-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card-b{padding:14px 16px}
+.seg{display:inline-flex;border:1px solid var(--field);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--field)}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer}
+
+/* heat map */
+.mx{display:grid;grid-template-columns:18px minmax(0,1fr);gap:6px}
+.ax{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ax-y{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center}
+.ax-x{grid-column:2;text-align:center;margin-top:4px}
+.hm{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:3px}
+.lab{font-size:11px;color:var(--muted);display:flex;flex-direction:column;justify-content:center;line-height:1.2;min-width:0}
+.lab b{font-size:12.5px;color:var(--ink)}
+.lab.y{text-align:right;align-items:flex-end;padding-right:6px;max-width:96px}
+.lab.x{text-align:center;align-items:center;padding-top:3px}
+.lab i{font-style:normal}
+@media(max-width:600px){.lab i{display:none}.lab.y{padding-right:3px}}
+.cell{position:relative;min-height:84px;background:var(--bg);padding:20px 5px 5px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px;outline:2px solid transparent;outline-offset:-2px;transition:outline-color .1s}
+.hm .cell:nth-child(2){border-top-left-radius:6px}
+.cell .n{position:absolute;top:4px;left:6px;font-size:10.5px;font-weight:700;color:var(--d);font-variant-numeric:tabular-nums}
+.cell.over{outline-color:var(--accent)}
+@media(max-width:600px){.cell{min-height:62px;padding:17px 3px 3px;gap:3px}.cell .n{left:4px;top:2px}}
+.chip{border:0;background:var(--navy);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;line-height:1.4;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.chip:hover,.chip.hl{background:var(--accent)}
+.chip.closed{background:#8896A8;text-decoration:line-through}
+.chip.lift{opacity:.3}
+@media(max-width:600px){.chip{font-size:10px;padding:1px 4px}}
+.ghost{position:fixed;z-index:100;pointer-events:none;transform:translate(-50%,-60%);box-shadow:0 8px 20px rgba(15,35,64,.3)}
+body.dragging,body.dragging *{cursor:grabbing!important}
+.legend{display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;background:var(--bg);box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.hint{margin:8px 0 0;font-size:11.5px;color:var(--faint)}
+kbd{font:inherit;font-size:10.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;color:var(--muted)}
+
+/* profile */
+.cat{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr) 26px;gap:10px;align-items:center;padding:5px 0;font-size:12.5px}
+.cat .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.bar{display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--line-2)}
+.bar i{display:block;height:100%;background:var(--fill)}
+.cat b{text-align:right;font-variant-numeric:tabular-nums}
+.top5{list-style:none;margin:0;padding:0}
+.top5 li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line-2);cursor:pointer}
+.top5 li:first-child{border-top:0;padding-top:2px}
+.top5 .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.top5 .o{font-size:11.5px;color:var(--muted)}
+.code{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg);color:var(--d);border-radius:5px;padding:1px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pill b{font-size:12.5px}
+.empty{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+
+/* register */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:#FBFCFE}
+.filters input[type=search],.filters select{border:1px solid var(--field);border-radius:7px;background:#fff;padding:0 10px;min-height:32px;font-size:12.5px}
+.filters input[type=search]{width:240px;max-width:100%}
+.filters .check{margin-left:auto}
+.tscroll{overflow-x:auto}
+table.reg{border-collapse:collapse;width:100%;min-width:980px}
+.reg th{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:#fff}
+.reg td{padding:10px;border-bottom:1px solid var(--line-2);vertical-align:top;font-size:12.5px}
+.reg tbody tr{cursor:pointer}
+.reg tbody tr:hover td,.reg tbody tr.hl td{background:#F8FBFF}
+.reg tr:last-child td{border-bottom:0}
+.reg td.c-id{white-space:nowrap}
+.reg td.c-risk{width:32%;min-width:240px}
+.reg .num{color:var(--faint);font-weight:700;text-align:right;width:34px;font-variant-numeric:tabular-nums}
+.reg .rt{border:0;background:none;padding:0;text-align:left;font-weight:600;cursor:pointer;color:var(--ink);font-size:13px}
+.reg .ds{color:var(--muted);font-size:12px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.reg tr.closed .rt{text-decoration:line-through;color:var(--muted)}
+.reg .late{color:var(--late);font-weight:600}
+.strat{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px;white-space:nowrap}
+.s-Avoid{background:#EFE9FB;color:#5B3CA8}.s-Reduce{background:var(--sky-100);color:var(--accent-dark)}.s-Transfer{background:#DDF3F1;color:#0F766E}.s-Accept{background:#EEF1F5;color:#4B5B70}
+.st{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.st::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--sd)}
+.st-Open{--sd:#2F7DE1}.st-Mitigating{--sd:#7C3AED}.st-Monitoring{--sd:#E8A200}.st-Closed{--sd:#A9B5C4}
+.arrow{color:var(--faint);margin:0 3px}
+.noresult{padding:26px 16px;text-align:center;color:var(--muted)}
+@media(max-width:760px){
+  table.reg{min-width:0}
+  .reg thead{display:none}
+  .reg,.reg tbody,.reg tr,.reg td{display:block}
+  .reg tr{display:flex;flex-wrap:wrap;gap:6px 10px;padding:12px 16px;border-bottom:1px solid var(--line-2)}
+  .reg td{border:0;padding:0;background:none!important}
+  .reg td.c-risk{flex-basis:100%;order:-1}
+  .reg .num{display:none}
+  .reg td[data-l]::before{content:attr(data-l)" ";color:var(--faint);font-size:11px;font-weight:600}
+  .reg .c-cat{color:var(--muted)}
+  .reg td.c-risk .ds{-webkit-line-clamp:2}
+}
+
+/* dialog */
+dialog{border:0;border-radius:12px;padding:0;width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 24px 60px rgba(15,35,64,.3);color:var(--ink)}
+dialog::backdrop{background:rgba(15,35,64,.5)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
+.dlg-h{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.dlg-h h2{margin:0;font-size:16px;flex:1}
+.xbtn{border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--muted);padding:4px 7px;border-radius:6px}
+.xbtn:hover{background:var(--sky-50)}
+.dlg-b{overflow:auto;padding:4px 20px 16px}
+.dlg-f{display:flex;gap:8px;padding:12px 20px;border-top:1px solid var(--line);flex-wrap:wrap;background:#FBFCFE}
+.dlg-f .sp{flex:1}
+.sec{padding-top:14px;display:grid;gap:12px}
+.sec>h3{margin:0;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-dark);display:flex;gap:8px;align-items:center}
+.sec>h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fg4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media(max-width:620px){.fg{grid-template-columns:minmax(0,1fr)}.fg4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+label.f{display:grid;gap:4px;font-size:11.5px;font-weight:600;color:var(--muted);min-width:0;align-content:start}
+label.f input,label.f select,label.f textarea{width:100%;border:1px solid var(--field);border-radius:7px;background:#fff;padding:7px 10px;font-size:13px;font-weight:400;color:var(--ink);min-height:36px}
+label.f textarea{resize:vertical;line-height:1.45}
+label.f input:hover,label.f select:hover,label.f textarea:hover{border-color:var(--field-hover)}
+label.f input:focus,label.f select:focus,label.f textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 2px rgba(28,111,224,.18)}
+.assess{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.sugg{border:1px solid var(--sky-200);background:var(--sky-50);border-radius:8px;padding:10px 12px;font-size:12.5px;display:grid;gap:7px}
+.sugg .top{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
+.sugg .top .t{flex:1;min-width:200px}
+.sugg .why{color:var(--muted);font-size:11.5px}
+.sugg .alts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--muted)}
+.alt{border:1px solid var(--sky-200);background:#fff;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--accent-dark)}
+.alt:hover{border-color:var(--accent)}
+.src{font-size:11px;color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0}
+
+footer.ft{margin:28px 0 30px;color:var(--faint);font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:200;background:var(--navy);color:#fff;border-radius:9px;padding:9px 14px;font-size:12.5px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(15,35,64,.3);max-width:calc(100vw - 32px)}
+.toast button{border:0;background:none;color:#9CC4FF;font-weight:700;cursor:pointer;padding:0}
+
+/* ---------- report ---------- */
+#rp{position:fixed;inset:0;z-index:300;background:#DDE4EE;overflow:auto}
+.rp-bar{position:sticky;top:0;z-index:2;background:var(--navy);color:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px}
+.rp-bar h2{margin:0;font-size:14px;flex:1;min-width:150px}
+.rp-bar .tip{font-size:11.5px;color:#B9C8DD;flex-basis:100%;order:3}
+@media(min-width:900px){.rp-bar .tip{flex-basis:auto;order:0}}
+.rp-bar .btn{border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff}
+.rp-bar .btn:hover{background:rgba(255,255,255,.16)}
+.rp-bar .btn.primary{background:var(--accent);border-color:var(--accent)}
+.paper{background:#fff;width:210mm;max-width:calc(100% - 24px);margin:20px auto 40px;padding:14mm 13mm;box-shadow:0 10px 40px rgba(15,35,64,.18);color:#0F2340;font-size:9.5pt;line-height:1.45}
+@media(max-width:600px){.paper{padding:18px 14px;margin:12px auto 30px}}
+.paper *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.r-band{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--navy);padding-bottom:7px;margin-bottom:14px;font-size:8.5pt;color:var(--muted);gap:10px;flex-wrap:wrap}
+.r-band .lg{display:flex;align-items:center;gap:7px;font-weight:700;color:var(--navy)}
+.r-conf{border:1px solid var(--late);color:var(--late);font-weight:700;letter-spacing:.08em;font-size:7.5pt;padding:2px 7px;border-radius:3px}
+.r-title{font-size:9pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-dark)}
+.r-h1{font-size:19pt;font-weight:800;letter-spacing:-.02em;margin:2px 0 10px;line-height:1.2}
+.r-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:16px}
+@media(max-width:600px){.r-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.r-meta div{padding:6px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+.r-meta span{display:block;font-size:7.5pt;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.r-meta b{font-weight:600}
+.r-h2{font-size:11.5pt;font-weight:800;color:var(--navy);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line);break-after:avoid}
+.r-h2 span{color:var(--accent);margin-right:6px}
+.r-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:10px}
+@media(max-width:600px){.r-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.r-kpi{border:1px solid var(--line);border-top:3px solid var(--fill,var(--navy));border-radius:4px;padding:6px 9px}
+.r-kpi span{display:block;font-size:7.5pt;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.r-kpi b{font-size:16pt;font-weight:800;line-height:1.2}
+.r-kpi small{display:block;font-size:7.5pt;color:var(--muted)}
+.r-sum{margin:0 0 4px;color:var(--ink-2)}
+.r-sum li{margin-bottom:3px}
+.r-maps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;break-inside:avoid}
+@media(max-width:600px){.r-maps{grid-template-columns:minmax(0,1fr)}}
+.r-map h4{margin:0 0 5px;font-size:9pt}
+.r-hm{border-collapse:separate;border-spacing:2px;width:100%;table-layout:fixed}
+.r-hm td{background:var(--bg);height:34px;vertical-align:top;padding:2px 3px;font-size:7pt;line-height:1.25;color:var(--ink)}
+.r-hm td.ax{background:none;text-align:right;vertical-align:middle;width:16px;font-size:7.5pt;color:var(--muted);letter-spacing:0}
+.r-hm tr.xl td{background:none;height:auto;text-align:center;font-size:7.5pt;color:var(--muted)}
+.r-hm td b{display:block;font-size:6.5pt;color:var(--d)}
+.r-cap{font-size:7.5pt;color:var(--muted);text-align:center;margin-top:2px}
+table.r-t{width:100%;border-collapse:collapse;font-size:8.3pt}
+.r-t th{background:var(--navy);color:#fff;text-align:left;font-weight:600;padding:5px 6px;font-size:7.5pt;letter-spacing:.03em}
+.r-t td{border-bottom:1px solid var(--line);padding:5px 6px;vertical-align:top}
+.r-t tr{break-inside:avoid}
+.r-t tbody tr:nth-child(even) td{background:#F8FAFD}
+.r-t .c{text-align:center}
+.r-t .nw{white-space:nowrap}
+.r-scroll{overflow-x:auto}
+.r-pill{display:inline-block;background:var(--bg);color:var(--d);font-weight:700;border-radius:3px;padding:0 5px;white-space:nowrap}
+.r-risk{border:1px solid var(--line);border-left:4px solid var(--fill);border-radius:4px;padding:8px 11px;margin-bottom:8px;break-inside:avoid}
+.r-risk .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.r-risk .hd b{font-size:10pt}
+.r-risk .hd .r-pill{margin-left:auto}
+.r-risk .mt{font-size:8pt;color:var(--muted);margin:1px 0 5px}
+.r-risk .gr{display:grid;grid-template-columns:110px minmax(0,1fr);gap:3px 10px;font-size:8.5pt}
+@media(max-width:600px){.r-risk .gr{grid-template-columns:minmax(0,1fr)}}
+.r-risk .gr span{color:var(--muted);font-weight:600}
+.r-risk ol{margin:0;padding-left:16px}
+.r-scale{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start;break-inside:avoid}
+@media(max-width:600px){.r-scale{grid-template-columns:minmax(0,1fr)}}
+.r-foot{margin-top:18px;padding-top:7px;border-top:1px solid var(--line);font-size:7.5pt;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.r-late{color:var(--late);font-weight:700}
+
+@page{size:A4;margin:12mm 11mm 15mm;
+  @bottom-left{content:"PM Hub by Navarat Veerawongchai · © 2026 · MIT License";font:7.5pt "Plus Jakarta Sans",sans-serif;color:#5B6E88}
+  @bottom-right{content:"Page " counter(page) " of " counter(pages);font:7.5pt "Plus Jakarta Sans",sans-serif;color:#5B6E88}}
+@media print{
+  body{background:#fff}
+  body>*:not(#rp){display:none!important}
+  #rp{position:static;overflow:visible;background:#fff}
+  .rp-bar{display:none}
+  .paper{width:auto;max-width:none;margin:0;padding:0;box-shadow:none}
+  .r-scroll{overflow:visible}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../" aria-label="Back to PM Hub"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#1C6FE0"/><rect x="5" y="5" width="4" height="4" rx="1" fill="#fff" opacity=".55"/><rect x="10" y="5" width="4" height="4" rx="1" fill="#fff" opacity=".8"/><rect x="15" y="5" width="4" height="4" rx="1" fill="#fff"/><rect x="5" y="10" width="4" height="4" rx="1" fill="#fff" opacity=".4"/><rect x="10" y="10" width="4" height="4" rx="1" fill="#fff" opacity=".55"/><rect x="15" y="10" width="4" height="4" rx="1" fill="#fff" opacity=".8"/><rect x="5" y="15" width="4" height="4" rx="1" fill="#fff" opacity=".3"/><rect x="10" y="15" width="4" height="4" rx="1" fill="#fff" opacity=".4"/><rect x="15" y="15" width="4" height="4" rx="1" fill="#fff" opacity=".55"/></svg>PM Hub</a><span class="crumb">/</span><span class="brand">Risk Register</span>
+  <span class="saved" id="saved" role="status"></span>
+</div></header>
+
+<div class="wrap" id="app"><main>
+  <div class="pbar">
+    <div class="pbar-l">
+      <div class="eyebrow">Risk Management · Risk Register &amp; Heat Map</div>
+      <h1 id="pname">My project</h1>
+      <div class="meta" id="pmeta"></div>
+    </div>
+    <div class="pbar-r">
+      <button class="btn primary" id="btn-add" type="button"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Add risk</button>
+      <button class="btn dark" id="btn-report" type="button"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 1.5H4a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 4 14.5h8a1.5 1.5 0 0 0 1.5-1.5V5.5z"/><path d="M9.5 1.5v4h4M8 8v4M6 10.5 8 12.5l2-2"/></svg>Risk report</button>
+      <button class="btn" id="btn-proj" type="button">Project details</button>
+      <button class="btn icon" id="btn-more" type="button" aria-haspopup="true" aria-expanded="false" aria-label="More options"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg></button>
+      <div class="menu" id="menu" role="menu" hidden>
+        <button type="button" role="menuitem" data-m="csv">Download register (Excel CSV)</button>
+        <button type="button" role="menuitem" data-m="example">Load example project</button>
+        <hr>
+        <button type="button" role="menuitem" data-m="export">Move to another device: export file</button>
+        <button type="button" role="menuitem" data-m="import">Move to another device: import file</button>
+        <hr>
+        <button type="button" role="menuitem" data-m="clear" class="warn">Clear register</button>
+      </div>
+      <input type="file" id="file" accept=".json,application/json" hidden>
+    </div>
+  </div>
+  <div class="note" id="exnote" hidden><span><b>Example project.</b> All names and risks are fictitious. Explore it, then start your own register.</span><button class="link" id="btn-start" type="button">Start my own register →</button></div>
+
+  <section class="kpis" id="kpis" aria-label="Risk summary"></section>
+
+  <div class="grid2">
+    <section class="card" aria-labelledby="hm-title">
+      <div class="card-h"><h2 id="hm-title">Risk heat map</h2><span class="sub" id="hm-sub"></span>
+        <div class="r"><div class="seg" role="group" aria-label="Rating view"><button type="button" data-view="inherent" aria-pressed="true">Inherent</button><button type="button" data-view="residual" aria-pressed="false">Residual</button></div></div></div>
+      <div class="card-b" id="hmwrap"></div>
+    </section>
+    <div>
+      <section class="card" aria-labelledby="cat-title"><div class="card-h"><h2 id="cat-title">Exposure by category</h2><span class="sub">open risks</span></div><div class="card-b" id="cats"></div></section>
+      <section class="card" aria-labelledby="top-title"><div class="card-h"><h2 id="top-title">Top risks</h2><span class="sub">by inherent score</span></div><div class="card-b"><ol class="top5" id="top5"></ol></div></section>
+    </div>
+  </div>
+
+  <section class="card" aria-labelledby="reg-title">
+    <div class="card-h"><h2 id="reg-title">Risk register</h2><span class="sub" id="reg-sub"></span></div>
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search risks, owners, actions" aria-label="Search risks">
+      <select id="fcat" aria-label="Filter by category"></select>
+      <select id="fband" aria-label="Filter by rating"><option value="">All ratings</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+      <label class="check"><input type="checkbox" id="fclosed"> Show closed</label>
+    </div>
+    <div class="tscroll"><table class="reg" id="reg"></table></div>
+  </section>
+</main>
+<footer class="ft"><span>Data is stored in this browser only and saved automatically.</span><span>PM Hub by Navarat Veerawongchai · © 2026 · MIT License</span></footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <form class="dlg" id="form" novalidate>
+    <div class="dlg-h"><h2 id="dlg-title">Add risk</h2><button class="xbtn" type="button" data-close aria-label="Close">×</button></div>
+    <div class="dlg-b">
+      <div class="sec"><h3>Risk identification</h3>
+        <label class="f">Risk title *<input id="f-title" required maxlength="160" placeholder="e.g. Vendor misses API delivery date"></label>
+        <label class="f">Description (cause, event, consequence)<textarea id="f-desc" rows="2" placeholder="Keywords here also improve the recommended response."></textarea></label>
+        <div class="fg"><label class="f">Category<select id="f-cat"></select></label><label class="f">Risk owner<input id="f-owner" maxlength="80" placeholder="Role or name"></label></div>
+      </div>
+      <div class="sec"><h3>Assessment</h3>
+        <div class="fg4">
+          <label class="f">Inherent probability<select id="f-p"></select></label>
+          <label class="f">Inherent impact<select id="f-i"></select></label>
+          <label class="f">Residual probability<select id="f-rp"></select></label>
+          <label class="f">Residual impact<select id="f-ri"></select></label>
+        </div>
+        <div class="assess" id="f-assess"></div>
+      </div>
+      <div class="sec"><h3>Response plan <span class="src" id="f-src"></span></h3>
+        <div class="sugg" id="sugg" aria-live="polite"></div>
+        <div class="fg"><label class="f">Response strategy<select id="f-strategy"><option>Avoid</option><option>Reduce</option><option>Transfer</option><option>Accept</option></select></label>
+          <div class="fg"><label class="f">Target date<input type="date" id="f-due"></label><label class="f">Status<select id="f-status"></select></label></div></div>
+        <label class="f">Actions (one per line)<textarea id="f-actions" rows="4"></textarea></label>
+        <div class="fg"><label class="f">Early-warning trigger<textarea id="f-trigger" rows="3"></textarea></label><label class="f">Contingency step<textarea id="f-cont" rows="3"></textarea></label></div>
+      </div>
+    </div>
+    <div class="dlg-f"><button class="btn danger" type="button" id="btn-del">Delete</button><span class="sp"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Save risk</button></div>
+  </form>
+</dialog>
+
+<dialog id="pdlg" aria-labelledby="pdlg-title">
+  <form class="dlg" id="pform" novalidate>
+    <div class="dlg-h"><h2 id="pdlg-title">Project details</h2><button class="xbtn" type="button" data-close aria-label="Close">×</button></div>
+    <div class="dlg-b"><div class="sec">
+      <label class="f">Project name *<input id="p-name" maxlength="120" required></label>
+      <div class="fg"><label class="f">Project code<input id="p-code" maxlength="40"></label><label class="f">Project manager<input id="p-pm" maxlength="80"></label></div>
+      <div class="fg"><label class="f">Business unit / sponsor<input id="p-unit" maxlength="80"></label><label class="f">Report classification<select id="p-class"><option>Confidential – Internal use</option><option>Internal use</option><option>Restricted</option><option>Public</option></select></label></div>
+      <p class="hint">These details appear at the top of the page and on the risk report.</p>
+    </div></div>
+    <div class="dlg-f"><span class="sp"></span><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Save</button></div>
+  </form>
+</dialog>
+
+<div id="rp" hidden>
+  <div class="rp-bar"><h2>Risk report preview</h2><span class="tip">PDF: choose “Save as PDF” as the destination in the print window.</span>
+    <button class="btn primary" type="button" id="rp-pdf">Download PDF</button><button class="btn" type="button" id="rp-csv">Excel (CSV)</button><button class="btn" type="button" id="rp-close">Close</button></div>
+  <article class="paper" id="paper"></article>
+</div>
+
+<div class="sr" aria-live="assertive" id="live"></div>
+<div class="toast" id="toast" role="status" hidden><span id="toast-msg"></span><button type="button" id="toast-undo">Undo</button></div>
+
+<script>
+/* PM Hub Risk Matrix: built-in mitigation rule library.
+   Written for PM Hub. Generic good practice for banking projects; not taken from any regulator or vendor text.
+   Each rule: id, cat, name, kw (keyword stems, English matched at word start, Thai matched anywhere),
+   strategy (Avoid | Reduce | Transfer | Accept), actions[], trigger, contingency. */
+window.RISK_RULES = [
+  /* ---------- Regulatory & Compliance ---------- */
+  {id:"reg-approval",cat:"regulatory",name:"Regulatory approval and notification",
+   kw:["regulat","central bank","approval","approve","notif","licen","circular","guideline","compliance","กฎระเบียบ","ธนาคารกลาง","อนุมัติ","แจ้ง","หน่วยงานกำกับ"],
+   strategy:"Reduce",
+   actions:["List every change in scope that touches a regulatory requirement and confirm the list with Compliance.","Agree with Compliance which items need prior approval or notification, and the filing lead time for each.","Add each filing to the plan as a milestone with a named owner and a buffer before go-live.","Keep an evidence pack ready: design decisions, test results, risk assessments and sign-offs."],
+   trigger:"Compliance has not confirmed the requirement list six weeks before go-live, or the regulator asks for more information.",
+   contingency:"Hold go-live for the affected scope only, release the parts that need no approval, and agree an interim manual control with Compliance."},
+  {id:"reg-privacy",cat:"regulatory",name:"Personal data protection (PDPA)",
+   kw:["pdpa","personal data","privacy","consent","data subject","retention","cross-border","pii","customer data","masking","unmask","ข้อมูลส่วนบุคคล","ความยินยอม","ความเป็นส่วนตัว"],
+   strategy:"Reduce",
+   actions:["Run a privacy impact assessment for every new or changed flow of personal data.","Record the lawful basis for each data use and get consent wording approved by the Data Protection Officer.","Mask or tokenise personal data before it reaches any non-production environment.","Set retention and deletion rules for the new data and test them before go-live."],
+   trigger:"Unmasked personal data is found in a test environment, or consent wording is not approved by design sign-off.",
+   contingency:"Remove the data, log it as a privacy incident and follow the breach-assessment procedure; pause the affected feature until the gap is closed."},
+  {id:"reg-audit",cat:"regulatory",name:"Audit findings and control gaps",
+   kw:["audit","finding","internal control","control gap","segregation","evidence","policy exception","ตรวจสอบ","ข้อตรวจพบ"],
+   strategy:"Reduce",
+   actions:["Invite Internal Audit and Operational Risk to the design review, not just the go-live review.","Add control evidence (approvals, test logs, access lists) to the delivery checklist for each release.","Check segregation of duties in every new role before user access is granted.","Track open findings in this register with due dates and owners."],
+   trigger:"An audit finding passes its due date, or a control test fails during UAT.",
+   contingency:"Put a compensating manual control in place and agree a dated remediation plan with Risk."},
+  {id:"reg-aml",cat:"regulatory",name:"AML, KYC and sanctions screening",
+   kw:["aml","kyc","know your customer","sanction","screening","cdd","onboarding","money laundering","ฟอกเงิน","รู้จักลูกค้า"],
+   strategy:"Reduce",
+   actions:["Confirm screening rules, lists and thresholds with the AML team before build.","Test with a set of known-match and near-match cases, and sign off the results with AML.","Run new and old screening in parallel and compare alert volumes.","Plan reviewer capacity for the expected alert volume after go-live."],
+   trigger:"Alert volume in the parallel run differs from the current system by more than the agreed tolerance.",
+   contingency:"Send all new onboarding to manual review until the rules are corrected and retested."},
+
+  /* ---------- Cyber Security ---------- */
+  {id:"cyber-vuln",cat:"cyber",name:"Vulnerabilities and security testing",
+   kw:["vulnerab","penetration","pen test","pentest","vapt","patch","security test","code scan","owasp","internet-facing","exposure","web application","ช่องโหว่","ทดสอบเจาะระบบ"],
+   strategy:"Reduce",
+   actions:["Book penetration testing and code-scan slots at least four weeks before UAT exit.","Threat-model every internet-facing component during design.","Fix all critical and high findings before go-live; any exception needs a signed risk acceptance from the CISO.","Harden servers and containers to the bank's security baseline and keep the scan evidence."],
+   trigger:"Critical or high findings are still open two weeks before go-live.",
+   contingency:"Go live with the affected feature switched off or protected by a temporary firewall rule, with a CISO-approved fix date."},
+  {id:"cyber-access",cat:"cyber",name:"Access and privileged accounts",
+   kw:["access","privileged","password","credential","identity","mfa","admin","iam","shared account","generic account","สิทธิ์","รหัสผ่าน"],
+   strategy:"Reduce",
+   actions:["Design roles on least privilege and have the business owner approve each role.","Route all privileged access through the privileged access tool with session recording.","Remove shared and generic accounts before go-live.","Schedule the first user access review within 90 days of go-live."],
+   trigger:"A shared or generic account is found, or an access review is overdue.",
+   contingency:"Disable the account, rotate the credentials and review the activity logs with IT Security."},
+  {id:"cyber-attack",cat:"cyber",name:"Cyber attack and ransomware",
+   kw:["ransomware","malware","ddos","attack","breach","hack","intrusion","cyber","phishing","โจมตี","แฮก","ไซเบอร์"],
+   strategy:"Reduce",
+   actions:["Confirm the security operations team has monitoring use cases for the new system before go-live.","Keep immutable, offline backups and test a restore.","Update the incident response playbook for the new system and run a tabletop exercise.","Check whether cyber insurance covers the new service."],
+   trigger:"Security monitoring raises an alert on the new system, or traffic is far above the normal pattern.",
+   contingency:"Isolate the affected components, start the incident response plan, restore from a clean backup and notify as the policy requires."},
+
+  /* ---------- Third-party & Vendor ---------- */
+  {id:"vendor-delivery",cat:"vendor",name:"Vendor delivery performance",
+   kw:["vendor","supplier","third party","third-party","outsourc","contractor","partner","fintech","sla","milestone","deliver","คู่ค้า","ผู้ขาย","ผู้ให้บริการ","ส่งมอบ"],
+   strategy:"Transfer",
+   actions:["Write milestones, acceptance criteria and service credits into the contract or statement of work.","Hold a weekly vendor status meeting with a burn-down of agreed deliverables.","Add a key-person clause for the vendor's lead roles.","Ask for early code drops so integration testing can start before the final delivery."],
+   trigger:"The vendor misses two milestones in a row, or a named key person leaves the account.",
+   contingency:"Escalate through contract governance and move critical-path work to an alternative vendor or the in-house team."},
+  {id:"vendor-risk",cat:"vendor",name:"Third-party risk and outsourcing",
+   kw:["due diligence","outsourcing","cloud","saas","data sharing","concentration","exit plan","vendor risk","hosting","คลาวด์","จ้างภายนอก"],
+   strategy:"Reduce",
+   actions:["Complete the third-party risk assessment (security, financial health, business continuity) before signing.","Check with Compliance whether the arrangement needs outsourcing approval or notification.","Include right-to-audit, data location and exit clauses in the contract.","Write a simple exit plan: who takes over, how data comes back, how long it takes."],
+   trigger:"The vendor's risk rating drops, or the vendor reports a security or service incident.",
+   contingency:"Run the exit plan or move to the backup provider for the critical services."},
+  {id:"vendor-eol",cat:"vendor",name:"Product support and end of life",
+   kw:["end of support","end of life","eol","eos","licence","license","roadmap","version","upgrade","unsupported","หมดอายุ","ไลเซนส์"],
+   strategy:"Avoid",
+   actions:["List every product and version in the solution with its vendor support end date.","Choose versions that stay supported for the planned life of the system.","Put support and upgrade commitments into the contract."],
+   trigger:"A vendor announces end of support inside the system's planned life.",
+   contingency:"Buy extended support and plan the upgrade as a funded follow-up project."},
+
+  /* ---------- Core Banking & Integration ---------- */
+  {id:"core-integration",cat:"core",name:"System integration and interfaces",
+   kw:["integrat","interface","api","core banking","middleware","esb","upstream","downstream","sit","channel","real-time","message","เชื่อมต่อ","ระบบหลัก","อินเทอร์เฟซ"],
+   strategy:"Reduce",
+   actions:["Keep an interface inventory with an owner, spec version and test status for each interface.","Freeze interface specs early and put any later change through change control.","Use stubs or mocks so teams can test before the real systems are ready.","Run end-to-end SIT across all systems, including end-of-day batch and reconciliation."],
+   trigger:"An interface spec changes after the freeze, or the SIT pass rate stays below 90% for a week.",
+   contingency:"Keep the old interface running behind a switch, and move non-critical interfaces to the next release."},
+  {id:"core-performance",cat:"core",name:"Performance, capacity and batch window",
+   kw:["performance","volume","capacity","latency","peak","load","scalab","throughput","end of day","eod","batch","slow","response time","ประสิทธิภาพ","ช้า"],
+   strategy:"Reduce",
+   actions:["Set performance targets from real peak days such as payday and month-end.","Load-test at 1.5 times peak in a production-like environment.","Check that end-of-day and month-end batch jobs fit inside the batch window with room to spare.","Agree a capacity plan for the next two years with Infrastructure."],
+   trigger:"Response time misses the target in load testing, or a batch run overruns its window.",
+   contingency:"Scale out the infrastructure, reschedule non-critical batch jobs and throttle low-priority traffic."},
+  {id:"core-config",cat:"core",name:"Core banking change and product setup",
+   kw:["customis","customiz","parameter","product setup","configuration","legacy","interest","fee","calculation","ดอกเบี้ย","ค่าธรรมเนียม","พารามิเตอร์"],
+   strategy:"Reduce",
+   actions:["Keep customisation to a minimum and prefer standard configuration.","Have product owners review and sign off every product parameter.","Build an automated regression pack for interest, fee and balance calculations.","Put parameter changes in production under change control with maker-checker."],
+   trigger:"Regression tests show differences in interest, fee or balance calculations.",
+   contingency:"Roll back the parameter change and correct affected accounts through an approved manual adjustment."},
+
+  /* ---------- Data Migration ---------- */
+  {id:"mig-quality",cat:"migration",name:"Data migration quality and reconciliation",
+   kw:["migrat","data quality","cleans","mapping","conversion","legacy data","reconcil","mock","ย้ายข้อมูล","โอนย้าย","คุณภาพข้อมูล","กระทบยอด"],
+   strategy:"Reduce",
+   actions:["Profile source data early and log every quality issue with the data owner who will fix it.","Have the business sign off the mapping rules.","Run at least three full-volume mock migrations before cutover.","Reconcile record counts, balances and key fields automatically, and agree the tolerance in advance."],
+   trigger:"A mock migration shows reconciliation breaks above the tolerance, or data issues are still open at the second mock.",
+   contingency:"Postpone cutover, or migrate the clean portion and keep the rest on the legacy system with a manual correction team."},
+  {id:"mig-cutover",cat:"migration",name:"Cutover and rollback",
+   kw:["cutover","go-live","go live","rollback","fallback","weekend","point of no return","ขึ้นระบบ","ย้อนกลับ"],
+   strategy:"Reduce",
+   actions:["Write an hour-by-hour cutover runbook and rehearse it at least twice.","Agree go / no-go criteria with business, IT and Operations.","Test the rollback steps and time them.","Prepare messages for customers, branches and the contact centre."],
+   trigger:"A rehearsal runs over the window, or any go / no-go criterion is not met.",
+   contingency:"Roll back to the legacy system before the point of no return and reschedule the cutover."},
+
+  /* ---------- Operational Resilience ---------- */
+  {id:"ops-outage",cat:"resilience",name:"Service outage and recovery",
+   kw:["downtime","outage","availab","incident","resilien","failover","disaster","dr","bcp","recovery","rto","rpo","disruption","unplanned","ระบบล่ม","หยุดชะงัก","กู้คืน"],
+   strategy:"Reduce",
+   actions:["Map the critical business services the system supports and agree recovery time and data loss targets.","Design for high availability and test failover and disaster recovery before go-live.","Prepare runbooks and an on-call rota for the first months.","Set monitoring and alert thresholds for the key business transactions."],
+   trigger:"A disaster recovery test misses its recovery target, or there are repeated priority 1 or 2 incidents in hypercare.",
+   contingency:"Start business continuity workarounds, switch to the recovery site and send prepared customer messages."},
+  {id:"ops-hypercare",cat:"resilience",name:"Handover to operations and hypercare",
+   kw:["hypercare","production support","handover","operations","support team","run team","bau","ส่งมอบงาน","ทีมปฏิบัติการ"],
+   strategy:"Reduce",
+   actions:["Define the hypercare period and its exit criteria before go-live.","Bring the operations team into UAT.","Get runbooks and knowledge transfer signed off by Operations.","Set up a daily war room for the first two weeks."],
+   trigger:"The support backlog grows three days in a row, or the operations team is not trained two weeks before go-live.",
+   contingency:"Extend hypercare with project staff and ask the vendor for on-site support."},
+
+  /* ---------- Fraud ---------- */
+  {id:"fraud-digital",cat:"fraud",name:"Digital channel fraud",
+   kw:["fraud","scam","mule","account takeover","social engineering","unauthori","otp","sim swap","impersonat","ทุจริต","มิจฉาชีพ","หลอกลวง","บัญชีม้า"],
+   strategy:"Reduce",
+   actions:["Walk through fraud scenarios with the Fraud team during design.","Set transaction limits, device binding and a cooling-off period for new payees.","Add real-time fraud monitoring rules for the new channel before launch.","Plan customer education messages for launch."],
+   trigger:"Fraud alerts or complaints about unauthorised transactions rise above the normal level.",
+   contingency:"Lower limits or suspend the feature, freeze suspicious accounts and follow the customer reimbursement process."},
+  {id:"fraud-internal",cat:"fraud",name:"Internal fraud and manual overrides",
+   kw:["internal fraud","insider","maker checker","maker-checker","collusion","override","manual adjustment","ทุจริตภายใน"],
+   strategy:"Reduce",
+   actions:["Require maker-checker on sensitive changes and payments.","Keep a full audit trail that users cannot change.","Review manual overrides weekly with the business owner."],
+   trigger:"Overrides by one user or team are well above the usual pattern.",
+   contingency:"Suspend the access, start an investigation with Fraud and Internal Audit."},
+
+  /* ---------- Change & Adoption ---------- */
+  {id:"chg-adoption",cat:"change",name:"User adoption and readiness",
+   kw:["adoption","user","training","resistance","change management","branch","staff","readiness","usability","customer experience","communicat","อบรม","ผู้ใช้","สาขา","พนักงาน"],
+   strategy:"Reduce",
+   actions:["Do an impact analysis for each user role: what changes in their day.","Name change champions in each branch or unit.","Give role-based training with a practice environment before go-live.","Run a readiness survey and publish quick guides and FAQs."],
+   trigger:"Training completion is below 80% two weeks before go-live, or the readiness survey score is low.",
+   contingency:"Roll out in phases, put floor-walkers in branches and extend the parallel run."},
+  {id:"chg-scope",cat:"change",name:"Scope and requirement changes",
+   kw:["scope","requirement","change request","scope creep","unclear","sign-off","signoff","business requirement","ขอบเขต","ความต้องการ"],
+   strategy:"Avoid",
+   actions:["Baseline requirements and get business sign-off before build.","Send every change request through a change control board with impact on time and cost.","Prioritise with MoSCoW and keep a traceability matrix."],
+   trigger:"Change requests exceed the agreed number per month, or sign-off is late.",
+   contingency:"Move non-critical scope to a later release and re-baseline the plan."},
+
+  /* ---------- Resources & Schedule ---------- */
+  {id:"res-people",cat:"resource",name:"Key people and team capacity",
+   kw:["resource","key person","sme","availab","attrition","turnover","resign","skill","capacity","architect","บุคลากร","ลาออก","ทรัพยากร"],
+   strategy:"Reduce",
+   actions:["Name a backup for every key role in the resource plan.","Agree subject-matter expert time with their line managers in writing.","Document decisions and designs as you go so knowledge does not sit with one person.","Keep a short onboarding guide for new team members."],
+   trigger:"A key person gives notice, or expert availability falls below the agreed share.",
+   contingency:"Bring in contractors or vendor staff and re-plan the affected work."},
+  {id:"res-schedule",cat:"resource",name:"Schedule delay and dependencies",
+   kw:["delay","schedule","timeline","deadline","late","slip","critical path","dependen","environment","ล่าช้า","กำหนดการ","เลื่อน"],
+   strategy:"Reduce",
+   actions:["Track the critical path weekly.","Keep a buffer before fixed dates such as regulatory deadlines.","Keep a dependency log with owners and due dates.","Agree escalation rules so slips are raised early."],
+   trigger:"A critical-path task slips more than five working days, or more than half of the buffer is used.",
+   contingency:"Fast-track or add people to critical tasks, cut scope, or re-baseline with the steering committee."},
+  {id:"res-budget",cat:"resource",name:"Budget and cost overrun",
+   kw:["budget","cost","overrun","funding","capex","opex","งบประมาณ","ค่าใช้จ่าย"],
+   strategy:"Reduce",
+   actions:["Track actual and forecast cost against the baseline every month.","Hold a contingency reserve and agree who can release it.","Require cost impact on every change request."],
+   trigger:"The forecast exceeds the budget by more than 5%.",
+   contingency:"Use the reserve, re-prioritise scope, or request extra funding from the steering committee."},
+
+  /* ---------- Fallback ---------- */
+  {id:"generic",cat:"other",name:"General risk response",
+   kw:[],
+   strategy:"Reduce",
+   actions:["Confirm the risk owner and the root cause with the team.","Agree one or two controls that lower the chance or the impact.","Review this risk at every project risk meeting until it is closed."],
+   trigger:"The probability or impact score rises, or a related issue is raised.",
+   contingency:"Escalate to the steering committee with options and their cost."}
+];
+</script>
+<script>
+(function(){
+"use strict";
+var KEY="pmhub.riskmatrix.v1";
+var CATS=[["regulatory","Regulatory & Compliance"],["cyber","Cyber Security"],["vendor","Third-party & Vendor"],["core","Core Banking & Integration"],["migration","Data Migration"],["resilience","Operational Resilience"],["fraud","Fraud"],["change","Change & Adoption"],["resource","Resources & Schedule"],["other","Other"]];
+var CAT={};CATS.forEach(function(c){CAT[c[0]]=c[1]});
+var PL=["","Rare","Unlikely","Possible","Likely","Almost certain"];
+var IL=["","Minimal","Minor","Moderate","Major","Severe"];
+var PD=["","Less than 10% chance during the project","10–30% chance","30–50% chance","50–80% chance","More than 80% chance"];
+var ID=["","Negligible effect on cost, time or customers","Small slip or cost; no customer or regulatory effect","Noticeable delay or cost; limited customer effect","Major delay, cost or customer harm; possible regulatory breach","Critical service failure, regulatory sanction or major financial loss"];
+var STATUSES=["Open","Mitigating","Monitoring","Closed"];
+var STRATS=["Avoid","Reduce","Transfer","Accept"];
+var BANDS=[["critical","Critical","20–25"],["high","High","10–16"],["medium","Medium","5–9"],["low","Low","1–4"]];
+var CLASSES=["Confidential – Internal use","Internal use","Restricted","Public"];
+var RULES=window.RISK_RULES||[];
+var RULE={};RULES.forEach(function(r){RULE[r.id]=r});
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function $(s){return document.querySelector(s)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function clamp(n,d){n=parseInt(n,10);return n>=1&&n<=5?n:d}
+function band(s){return s>=20?"critical":s>=10?"high":s>=5?"medium":"low"}
+function bandName(b){return {critical:"Critical",high:"High",medium:"Medium",low:"Low"}[b]}
+function inh(r){return r.p*r.i}
+function res(r){return r.rp*r.ri}
+function pad(n){return String(n).padStart(2,"0")}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function today(){return iso(new Date())}
+function addDays(n){var d=new Date();d.setDate(d.getDate()+n);return iso(d)}
+function fmtDate(s){if(!s)return "—";var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return m?(+m[3])+" "+MON[+m[2]-1]+" "+m[1]:s}
+function fmtTime(t){var d=new Date(t);return (+d.getDate())+" "+MON[d.getMonth()]+" "+d.getFullYear()+", "+pad(d.getHours())+":"+pad(d.getMinutes())}
+function late(r){return r.status!=="Closed"&&r.due&&r.due<today()}
+function pill(s){var b=band(s);return '<span class="pill b-'+b+'"><b>'+s+'</b>'+bandName(b)+'</span>'}
+
+/* ---------- recommendation engine ---------- */
+function kwHit(text,k){
+  if(/[^\x00-\x7f]/.test(k))return text.indexOf(k)>=0;
+  return new RegExp("(^|[^a-z0-9])"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).test(text);
+}
+function suggest(r){
+  var text=((r.title||"")+" "+(r.desc||"")).toLowerCase();
+  var out=RULES.filter(function(x){return x.id!=="generic"}).map(function(x){
+    var hits=x.kw.filter(function(k){return kwHit(text,k)});
+    return {rule:x,hits:hits,score:hits.length*2+(x.cat===r.cat?3:0)};
+  }).filter(function(m){return m.score>0}).sort(function(a,b){return b.score-a.score||b.hits.length-a.hits.length});
+  if(!out.length)out=[{rule:RULE.generic,hits:[],score:0}];
+  return out.slice(0,4);
+}
+function mitFrom(rule){return {strategy:rule.strategy,actions:rule.actions.slice(),trigger:rule.trigger,contingency:rule.contingency,src:"library:"+rule.id}}
+
+/* ---------- state ---------- */
+var state,ui={view:"inherent",q:"",cat:"",band:"",closed:false},undoSnap=null,saveOk=true;
+function blank(){return {v:2,name:"My project",code:"",pm:"",unit:"",cls:CLASSES[0],example:false,seq:1,risks:[],savedAt:0}}
+function mk(o,seq){
+  var r={id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),code:"R-"+pad(seq),title:o.title,desc:o.desc||"",cat:o.cat,owner:o.owner||"",p:o.p,i:o.i,rp:o.rp||o.p,ri:o.ri||o.i,due:o.due||"",status:o.status||"Open"};
+  r.mit=mitFrom(suggest(r)[0].rule);return r;
+}
+function example(){
+  var d=[
+    ["Regulator approval for the new digital loan product arrives late","Product launch needs prior approval from the central bank; the filing pack is not started.","regulatory","Compliance Lead",3,5,2,4,"Open",21],
+    ["Customer personal data copied into UAT without masking","Testers asked for production extracts to test credit scoring (PDPA exposure).","regulatory","Data Protection Officer",3,4,1,4,"Mitigating",10],
+    ["Critical findings from penetration test of the lending app","Internet-facing app and new API gateway have not been security tested yet.","cyber","IT Security Lead",3,4,2,3,"Open",35],
+    ["Scoring vendor misses API delivery milestone","Third-party credit scoring vendor is already two weeks late on the sandbox drop.","vendor","Vendor Manager",4,3,3,2,"Open",-4],
+    ["Loan disbursement interface to core banking fails in SIT","Message format between the lending platform and core banking is still changing.","core","Integration Lead",3,3,2,2,"Mitigating",14],
+    ["Legacy loan balances do not reconcile after mock migration","Mock 1 showed breaks in accrued interest for older loan accounts.","migration","Data Migration Lead",4,4,2,3,"Open",-6],
+    ["Extended downtime during cutover weekend","Cutover needs a long outage of loan servicing; rollback has not been timed.","resilience","Operations Manager",2,5,1,4,"Monitoring",45],
+    ["Mule accounts abuse the new instant loan feature","Fraud rings may open accounts and draw instant loans before monitoring catches them.","fraud","Fraud Risk Manager",4,5,2,4,"Open",28],
+    ["Branch staff not ready to support the new loan flow","Training plan for branch staff is not agreed and readiness is unknown.","change","Change Manager",3,2,2,2,"Open",40],
+    ["Key solution architect unavailable during build","The only architect who knows the integration design is shared with another programme.","resource","Project Manager",2,3,1,3,"Monitoring",30],
+    ["UAT environment shared with another project","Environment booking conflicts could delay test cycles.","resource","Test Manager",2,2,1,2,"Open",7],
+    ["Hardware for the recovery site delivered late","Supplier delivery for recovery site servers slipped by a month.","vendor","Infrastructure Lead",1,4,1,2,"Closed",-20]
+  ];
+  var s={v:2,name:"Digital Lending Platform Upgrade",code:"EX-2026-014",pm:"Project Manager (example)",unit:"Retail Lending (example)",cls:CLASSES[0],example:true,seq:1,risks:[],savedAt:0};
+  d.forEach(function(x){s.risks.push(mk({title:x[0],desc:x[1],cat:x[2],owner:x[3],p:x[4],i:x[5],rp:x[6],ri:x[7],status:x[8],due:addDays(x[9])},s.seq++))});
+  return s;
+}
+function clean(o){
+  if(!o||!Array.isArray(o.risks))return null;
+  var s={v:2,name:String(o.name||"My project").slice(0,120),code:String(o.code||"").slice(0,40),pm:String(o.pm||"").slice(0,80),unit:String(o.unit||"").slice(0,80),cls:CLASSES.indexOf(o.cls)>=0?o.cls:CLASSES[0],example:!!o.example,seq:1,risks:[],savedAt:+o.savedAt||0};
+  o.risks.forEach(function(r){
+    if(!r||!r.title)return;
+    var m=r.mit||{},p=clamp(r.p,3),i=clamp(r.i,3);
+    s.risks.push({id:String(r.id||("r"+Math.random().toString(36).slice(2,10))),code:String(r.code||"").slice(0,12),title:String(r.title).slice(0,160),desc:String(r.desc||"").slice(0,2000),cat:CAT[r.cat]?r.cat:"other",owner:String(r.owner||"").slice(0,80),
+      p:p,i:i,rp:clamp(r.rp,p),ri:clamp(r.ri,i),due:/^\d{4}-\d{2}-\d{2}$/.test(r.due||"")?r.due:"",status:STATUSES.indexOf(r.status)>=0?r.status:"Open",
+      mit:{strategy:STRATS.indexOf(m.strategy)>=0?m.strategy:"Reduce",actions:Array.isArray(m.actions)?m.actions.map(String).filter(Boolean).slice(0,30):[],trigger:String(m.trigger||""),contingency:String(m.contingency||""),src:String(m.src||"edited")}});
+  });
+  var max=0;s.risks.forEach(function(r){var n=parseInt((r.code.match(/\d+/)||[0])[0],10);if(n>max)max=n});
+  s.risks.forEach(function(r){if(!r.code)r.code="R-"+pad(++max)});
+  s.seq=Math.max(parseInt(o.seq,10)||0,max+1);
+  return s;
+}
+function load(){try{var t=localStorage.getItem(KEY);if(t){var s=clean(JSON.parse(t));if(s)return s}}catch(e){}return example()}
+var CHECK='<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5" stroke-width="1.5"/><path d="M5.2 8.2 7 10l3.8-4"/></svg>';
+function save(){
+  state.savedAt=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(state));saveOk=true}catch(e){saveOk=false}
+  showSaved();
+}
+function showSaved(){
+  var el=$("#saved");el.classList.toggle("bad",!saveOk);
+  el.innerHTML=saveOk?CHECK+"<span>All changes saved · "+(state.savedAt?fmtTime(state.savedAt):"")+"</span>":CHECK+"<span>Not saved: this browser is blocking storage</span>";
+}
+function snap(){undoSnap=JSON.stringify(state)}
+function commit(msg,canUndo){save();render();if(msg)toast(msg,canUndo)}
+function byId(id){for(var k=0;k<state.risks.length;k++)if(state.risks[k].id===id)return state.risks[k]}
+function ranked(){return state.risks.slice().sort(function(a,b){return (a.status==="Closed")-(b.status==="Closed")||inh(b)-inh(a)||res(b)-res(a)||b.i-a.i||a.code.localeCompare(b.code)})}
+function openRisks(){return state.risks.filter(function(r){return r.status!=="Closed"})}
+
+/* ---------- render ---------- */
+function render(){
+  $("#pname").textContent=state.name;document.title=state.name+" · Risk Register";
+  $("#pmeta").innerHTML=[state.code?"<span>Code <b>"+esc(state.code)+"</b></span>":"",state.pm?"<span>PM <b>"+esc(state.pm)+"</b></span>":"",state.unit?"<span>Unit <b>"+esc(state.unit)+"</b></span>":"","<span>"+state.risks.length+" risks in register</span>"].join("");
+  $("#exnote").hidden=!state.example;
+  renderKpis();renderMap();renderCats();renderTop();renderTable();
+}
+function renderKpis(){
+  var open=openRisks(),c={critical:0,high:0,medium:0,low:0};open.forEach(function(r){c[band(inh(r))]++});
+  var ti=0,tr=0;open.forEach(function(r){ti+=inh(r);tr+=res(r)});
+  var red=ti?Math.round((1-tr/ti)*100):0,lt=open.filter(late).length;
+  $("#kpis").innerHTML=
+    '<div class="kpi"><div class="l">Open risks</div><div class="v">'+open.length+'</div><div class="s">'+(state.risks.length-open.length)+' closed</div></div>'+
+    '<div class="kpi b-critical"><div class="l">Critical</div><div class="v">'+c.critical+'</div><div class="s">Inherent score 20–25</div></div>'+
+    '<div class="kpi b-high"><div class="l">High</div><div class="v">'+c.high+'</div><div class="s">Inherent score 10–16</div></div>'+
+    '<div class="kpi b-low"><div class="l">Exposure after response</div><div class="v">'+(ti?"−"+red+"%":"—")+'</div><div class="s">Total score '+ti+' → '+tr+'</div></div>'+
+    '<div class="kpi '+(lt?"k-late b-critical":"")+'"><div class="l">Overdue responses</div><div class="v">'+lt+'</div><div class="s">Past target date</div></div>';
+}
+function visible(r){return ui.closed||r.status!=="Closed"}
+function pos(r){return ui.view==="residual"?[r.rp,r.ri]:[r.p,r.i]}
+function renderMap(){
+  var wrap=$("#hmwrap");
+  document.querySelectorAll("[data-view]").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.view===ui.view)});
+  if(!state.risks.length){$("#hm-sub").textContent="";wrap.innerHTML='<div class="empty"><b>No risks yet</b>Add the risks you are concerned about. Each one gets a recommended response plan from the built-in library.<p><button class="btn primary" type="button" data-add>Add first risk</button></p></div>';return}
+  var shown=state.risks.filter(visible);
+  $("#hm-sub").textContent=(ui.view==="residual"?"After response · ":"Before response · ")+shown.length+" risks";
+  var h='<div class="mx"><div class="ax ax-y">Probability</div><div class="hm" role="grid" aria-label="'+(ui.view==="residual"?"Residual":"Inherent")+' risk heat map. Rows: probability 5 to 1. Columns: impact 1 to 5.">';
+  for(var p=5;p>=1;p--){
+    h+='<div class="lab y" role="rowheader"><b>'+p+'</b><i>'+PL[p]+'</i></div>';
+    for(var i=1;i<=5;i++){
+      var s=p*i,b=band(s),here=shown.filter(function(r){var q=pos(r);return q[0]===p&&q[1]===i}).sort(function(a,c){return a.code.localeCompare(c.code)});
+      h+='<div class="cell b-'+b+'" data-p="'+p+'" data-i="'+i+'" role="gridcell" aria-label="Probability '+p+', impact '+i+', score '+s+' '+bandName(b)+', '+here.length+' risks"><span class="n" aria-hidden="true">'+s+'</span>';
+      here.forEach(function(r){h+='<button type="button" class="chip'+(r.status==="Closed"?" closed":"")+'" data-id="'+esc(r.id)+'" title="'+esc(r.code+" · "+r.title)+'" aria-label="'+esc(r.code+" "+r.title)+'" aria-describedby="hm-hint">'+esc(r.code)+'</button>'});
+      h+='</div>';
+    }
+  }
+  h+='<div></div>';for(var x=1;x<=5;x++)h+='<div class="lab x"><b>'+x+'</b><i>'+IL[x]+'</i></div>';
+  h+='</div><div class="ax ax-x">Impact</div></div>';
+  h+='<div class="legend">'+BANDS.slice().reverse().map(function(b){return '<span class="b-'+b[0]+'"><i></i>'+b[1]+' ('+b[2]+')</span>'}).join("")+'</div>';
+  h+='<p class="hint" id="hm-hint">Drag a risk to re-rate it'+(ui.view==="residual"?" (residual)":"")+'. Keyboard: focus a risk, <kbd>↑</kbd><kbd>↓</kbd> probability, <kbd>←</kbd><kbd>→</kbd> impact, <kbd>Enter</kbd> to open.</p>';
+  wrap.innerHTML=h;
+}
+function renderCats(){
+  var open=openRisks(),rows=CATS.map(function(c){var rs=open.filter(function(r){return r.cat===c[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:c,rs:rs,n:n}}).filter(function(x){return x.rs.length});
+  rows.sort(function(a,b){return b.n.critical-a.n.critical||b.n.high-a.n.high||b.rs.length-a.rs.length});
+  var max=Math.max.apply(null,rows.map(function(x){return x.rs.length}).concat([1]));
+  $("#cats").innerHTML=rows.length?rows.map(function(x){
+    return '<div class="cat"><span class="nm">'+esc(x.c[1])+'</span><span class="bar" title="'+BANDS.map(function(b){return x.n[b[0]]+" "+b[1]}).join(", ")+'">'+BANDS.map(function(b){return x.n[b[0]]?'<i class="b-'+b[0]+'" style="width:'+(x.n[b[0]]/max*100)+'%"></i>':""}).join("")+'</span><b>'+x.rs.length+'</b></div>';
+  }).join(""):'<div class="hint">No open risks.</div>';
+}
+function renderTop(){
+  var t=ranked().filter(function(r){return r.status!=="Closed"}).slice(0,5);
+  $("#top5").innerHTML=t.length?t.map(function(r){return '<li data-id="'+esc(r.id)+'"><span class="code">'+esc(r.code)+'</span><div style="min-width:0"><div class="t">'+esc(r.title)+'</div><div class="o">'+esc(r.owner||"No owner")+' · '+(late(r)?'<span style="color:var(--late);font-weight:600">Overdue '+fmtDate(r.due)+'</span>':'Target '+fmtDate(r.due))+'</div></div>'+pill(inh(r))+'</li>'}).join(""):'<li style="cursor:default" class="hint">No open risks.</li>';
+}
+function filtered(){
+  var q=ui.q.toLowerCase();
+  return ranked().filter(function(r){
+    if(!visible(r))return false;
+    if(ui.cat&&r.cat!==ui.cat)return false;
+    if(ui.band&&band(inh(r))!==ui.band)return false;
+    if(q&&[r.code,r.title,r.desc,r.owner,CAT[r.cat],r.mit.actions.join(" ")].join(" ").toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+}
+function renderTable(){
+  var all=ranked(),list=filtered();
+  $("#reg-sub").textContent=list.length+" of "+state.risks.length+" · ranked by inherent score";
+  if(!list.length){$("#reg").innerHTML='<tbody><tr><td class="noresult">'+(state.risks.length?"No risks match these filters.":"Your ranked register will appear here.")+'</td></tr></tbody>';return}
+  $("#reg").innerHTML='<thead><tr><th class="num">#</th><th>ID</th><th>Risk</th><th>Category</th><th>Owner</th><th>Inherent</th><th>Residual</th><th>Response</th><th>Target date</th><th>Status</th></tr></thead><tbody>'+
+  list.map(function(r){
+    return '<tr data-id="'+esc(r.id)+'" class="'+(r.status==="Closed"?"closed":"")+'"><td class="num">'+(all.indexOf(r)+1)+'</td><td class="c-id"><span class="code">'+esc(r.code)+'</span></td>'+
+      '<td class="c-risk"><button class="rt" type="button">'+esc(r.title)+'</button>'+(r.desc?'<div class="ds">'+esc(r.desc)+'</div>':'')+'</td>'+
+      '<td class="c-cat">'+esc(CAT[r.cat])+'</td><td data-l="Owner">'+esc(r.owner||"—")+'</td>'+
+      '<td data-l="Inherent">'+pill(inh(r))+'</td><td data-l="Residual">'+pill(res(r))+'</td>'+
+      '<td><span class="strat s-'+r.mit.strategy+'">'+r.mit.strategy+'</span></td>'+
+      '<td data-l="Target" class="'+(late(r)?"late":"")+'">'+fmtDate(r.due)+(late(r)?" · overdue":"")+'</td>'+
+      '<td><span class="st st-'+r.status+'">'+r.status+'</span></td></tr>';
+  }).join("")+'</tbody>';
+}
+
+/* ---------- moving on the heat map ---------- */
+function move(id,p,i,how){
+  var r=byId(id);if(!r)return;p=Math.min(5,Math.max(1,p));i=Math.min(5,Math.max(1,i));
+  var resid=ui.view==="residual",cur=pos(r);
+  if(cur[0]===p&&cur[1]===i)return false;
+  snap();if(resid){r.rp=p;r.ri=i}else{r.p=p;r.i=i}
+  var s=p*i,msg=r.code+" "+(resid?"residual":"inherent")+" rating set to P"+p+" × I"+i+" = "+s+" ("+bandName(band(s))+")";
+  save();render();
+  if(how==="key"){$("#live").textContent=msg;var c=document.querySelector('.chip[data-id="'+id+'"]');if(c)c.focus()}
+  else toast(msg,true);
+  return true;
+}
+var drag=null,suppressClick=false;
+document.addEventListener("pointerdown",function(e){
+  var c=e.target.closest&&e.target.closest(".chip");if(!c||e.button!==0)return;
+  drag={id:c.dataset.id,el:c,x:e.clientX,y:e.clientY,on:false,ghost:null,over:null,pid:e.pointerId};
+});
+document.addEventListener("pointermove",function(e){
+  if(!drag||e.pointerId!==drag.pid)return;
+  if(!drag.on){
+    if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)<6)return;
+    drag.on=true;drag.ghost=drag.el.cloneNode(true);drag.ghost.classList.add("ghost");
+    document.body.appendChild(drag.ghost);drag.el.classList.add("lift");document.body.classList.add("dragging");
+  }
+  e.preventDefault();
+  drag.ghost.style.left=e.clientX+"px";drag.ghost.style.top=e.clientY+"px";
+  var t=document.elementFromPoint(e.clientX,e.clientY),cell=t&&t.closest(".cell");
+  if(cell!==drag.over){if(drag.over)drag.over.classList.remove("over");drag.over=cell;if(cell)cell.classList.add("over")}
+},{passive:false});
+function endDrag(e,cancel){
+  if(!drag||(e&&e.pointerId!==drag.pid))return;
+  var d=drag;drag=null;if(!d.on)return;
+  suppressClick=true;setTimeout(function(){suppressClick=false},0);
+  if(d.ghost)d.ghost.remove();d.el.classList.remove("lift");document.body.classList.remove("dragging");
+  if(d.over){d.over.classList.remove("over");if(!cancel)move(d.id,+d.over.dataset.p,+d.over.dataset.i,"drag")}
+}
+document.addEventListener("pointerup",function(e){endDrag(e,false)});
+document.addEventListener("pointercancel",function(e){endDrag(e,true)});
+document.addEventListener("keydown",function(e){
+  if(drag&&e.key==="Escape"){if(drag.over)drag.over.classList.remove("over");drag.over=null;endDrag(null,true);return}
+  if(e.key==="Escape"&&!$("#menu").hidden){toggleMenu(false);return}
+  var c=e.target.closest&&e.target.closest(".chip");if(!c)return;
+  var r=byId(c.dataset.id);if(!r)return;
+  var d={ArrowUp:[1,0],ArrowDown:[-1,0],ArrowRight:[0,1],ArrowLeft:[0,-1]}[e.key];if(!d)return;
+  e.preventDefault();var q=pos(r);
+  if(move(r.id,q[0]+d[0],q[1]+d[1],"key")===false)$("#live").textContent=r.code+" is already at the edge of the heat map.";
+});
+function hl(id,on){document.querySelectorAll('[data-id="'+id+'"]').forEach(function(el){el.classList.toggle("hl",on)})}
+document.addEventListener("mouseover",function(e){var el=e.target.closest&&e.target.closest(".chip,tr[data-id]");if(el)hl(el.dataset.id,true)});
+document.addEventListener("mouseout",function(e){var el=e.target.closest&&e.target.closest(".chip,tr[data-id]");if(el)hl(el.dataset.id,false)});
+
+/* ---------- clicks ---------- */
+document.addEventListener("click",function(e){
+  var t=e.target;
+  if(!$("#menu").hidden&&!t.closest("#menu")&&!t.closest("#btn-more"))toggleMenu(false);
+  var chip=t.closest(".chip");if(chip){if(!suppressClick)openDlg(chip.dataset.id);return}
+  var row=t.closest("tr[data-id],.top5 li[data-id]");if(row){openDlg(row.dataset.id);return}
+  var v=t.closest("[data-view]");if(v){ui.view=v.dataset.view;renderMap();return}
+  if(t.closest("[data-add]"))return openDlg(null);
+});
+$("#btn-add").onclick=function(){openDlg(null)};
+$("#q").addEventListener("input",function(){ui.q=this.value;renderTable()});
+$("#fcat").innerHTML='<option value="">All categories</option>'+CATS.map(function(c){return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'}).join("");
+$("#fcat").onchange=function(){ui.cat=this.value;renderTable()};
+$("#fband").onchange=function(){ui.band=this.value;renderTable()};
+$("#fclosed").onchange=function(){ui.closed=this.checked;renderMap();renderTable()};
+$("#btn-start").onclick=function(){if(!confirm("Clear the example and start an empty register?"))return;snap();state=blank();commit("New register started",true);openProj()};
+function toggleMenu(on){$("#menu").hidden=!on;$("#btn-more").setAttribute("aria-expanded",on)}
+$("#btn-more").onclick=function(){toggleMenu($("#menu").hidden)};
+$("#menu").addEventListener("click",function(e){
+  var b=e.target.closest("[data-m]");if(!b)return;toggleMenu(false);
+  var m=b.dataset.m;
+  if(m==="csv")downloadCsv();
+  if(m==="example"){if(state.risks.length&&!state.example&&!confirm("Replace your register with the example project? You can undo right after."))return;snap();state=example();commit("Example project loaded",true)}
+  if(m==="export")download(fileName("risk-register-data","json"),"application/json",JSON.stringify({app:"pmhub-risk-matrix",version:2,exportedAt:new Date().toISOString(),data:state},null,2));
+  if(m==="import"){$("#file").value="";$("#file").click()}
+  if(m==="clear"){if(!confirm("Delete all "+state.risks.length+" risks and project details from this browser? You can undo right after."))return;snap();state=blank();commit("Register cleared",true)}
+});
+$("#file").addEventListener("change",function(){
+  var f=this.files[0];if(!f)return;
+  var rd=new FileReader();rd.onload=function(){
+    var s=null;try{var o=JSON.parse(rd.result);s=clean(o&&o.data?o.data:o)}catch(e){}
+    if(!s){alert("This file is not a PM Hub risk register file.");return}
+    if(!confirm("Import "+s.risks.length+" risks from \""+f.name+"\"? This replaces the register in this browser. You can undo right after."))return;
+    snap();state=s;commit("Imported "+s.risks.length+" risks",true);
+  };rd.readAsText(f);
+});
+
+/* ---------- project details ---------- */
+var pdlg=$("#pdlg");
+function openProj(){$("#p-name").value=state.name;$("#p-code").value=state.code;$("#p-pm").value=state.pm;$("#p-unit").value=state.unit;$("#p-class").value=state.cls;pdlg.showModal();$("#p-name").focus()}
+$("#btn-proj").onclick=openProj;
+pdlg.addEventListener("click",function(e){if(e.target.closest("[data-close]")||e.target===pdlg)pdlg.close()});
+$("#pform").addEventListener("submit",function(e){
+  e.preventDefault();var n=$("#p-name").value.trim();if(!n){$("#p-name").focus();return}
+  snap();state.name=n;state.code=$("#p-code").value.trim();state.pm=$("#p-pm").value.trim();state.unit=$("#p-unit").value.trim();state.cls=$("#p-class").value;
+  pdlg.close();commit("Project details saved",true);
+});
+
+/* ---------- risk dialog ---------- */
+var dlg=$("#dlg"),editing=null,mitSrc="";
+function F(id){return $("#f-"+id)}
+$("#f-cat").innerHTML=CATS.map(function(c){return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'}).join("");
+["p","rp"].forEach(function(k){F(k).innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+PL[n]+'</option>'}).join("")});
+["i","ri"].forEach(function(k){F(k).innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+IL[n]+'</option>'}).join("")});
+F("status").innerHTML=STATUSES.map(function(s){return '<option>'+s+'</option>'}).join("");
+function formRisk(){return {title:F("title").value.trim(),desc:F("desc").value.trim(),cat:F("cat").value,owner:F("owner").value.trim(),p:+F("p").value,i:+F("i").value,rp:+F("rp").value,ri:+F("ri").value,due:F("due").value,status:F("status").value}}
+function mitEmpty(){return !F("actions").value.trim()&&!F("trigger").value.trim()&&!F("cont").value.trim()}
+function setMit(m){F("strategy").value=m.strategy;F("actions").value=m.actions.join("\n");F("trigger").value=m.trigger;F("cont").value=m.contingency;mitSrc=m.src;showSrc()}
+function showSrc(){var r=mitSrc.indexOf("library:")===0?RULE[mitSrc.slice(8)]:null;F("src").textContent=r?"· Draft from PM Hub library: review before approval":(mitSrc?"· Tailored by you":"")}
+function updAssess(){var a=+F("p").value*+F("i").value,b=+F("rp").value*+F("ri").value;F("assess").innerHTML='Inherent '+pill(a)+'<span class="arrow">→</span>Residual '+pill(b)+(b>a?' <span style="color:var(--late)">Residual is higher than inherent</span>':'')}
+function updSugg(){
+  var fr=formRisk(),list=suggest(fr),top=list[0],using=mitSrc==="library:"+top.rule.id;
+  var why=top.hits.length?"Matched on: "+top.hits.slice(0,5).join(", ")+(top.rule.cat===fr.cat?" and category":""):(top.rule.cat===fr.cat?"Matched on category":"No close match yet. Add detail to the title or description.");
+  var h='<div class="top"><span class="t">Recommended response: <b>'+esc(top.rule.name)+'</b> <span class="strat s-'+top.rule.strategy+'">'+top.rule.strategy+'</span><br><span class="why">'+esc(why)+'</span></span>'+
+    (using?'<span class="src">Applied</span>':'<button class="btn small" type="button" data-use="'+top.rule.id+'">'+(mitEmpty()?"Apply":"Replace plan")+'</button>')+'</div>';
+  if(list.length>1)h+='<div class="alts">Alternatives:'+list.slice(1).map(function(m){return '<button class="alt" type="button" data-use="'+m.rule.id+'" title="Replace the plan with: '+esc(m.rule.name)+'">'+esc(m.rule.name)+'</button>'}).join("")+'</div>';
+  $("#sugg").innerHTML=h;
+}
+$("#sugg").addEventListener("click",function(e){
+  var b=e.target.closest("[data-use]");if(!b)return;var rule=RULE[b.dataset.use];
+  if(!mitEmpty()&&mitSrc.indexOf("library:")!==0&&!confirm("Replace your tailored response plan with \""+rule.name+"\"?"))return;
+  setMit(mitFrom(rule));updSugg();
+});
+["title","desc","cat"].forEach(function(k){F(k).addEventListener("input",updSugg)});
+["p","i","rp","ri"].forEach(function(k){F(k).addEventListener("change",updAssess)});
+["strategy","actions","trigger","cont"].forEach(function(k){F(k).addEventListener("input",function(){mitSrc="edited";showSrc();updSugg()})});
+function openDlg(id){
+  editing=id?byId(id):null;
+  $("#dlg-title").textContent=editing?editing.code+" · Edit risk":"Add risk";
+  $("#btn-del").hidden=!editing;
+  var r=editing||{title:"",desc:"",cat:"regulatory",owner:"",p:3,i:3,rp:3,ri:3,due:"",status:"Open",mit:{strategy:"Reduce",actions:[],trigger:"",contingency:"",src:""}};
+  ["title","desc","cat","owner","p","i","rp","ri","due","status"].forEach(function(k){F(k).value=r[k]});
+  setMit(r.mit);updAssess();updSugg();
+  dlg.showModal();F("title").focus();
+}
+dlg.addEventListener("click",function(e){if(e.target.closest("[data-close]")||e.target===dlg)dlg.close()});
+$("#form").addEventListener("submit",function(e){
+  e.preventDefault();
+  var fr=formRisk();if(!fr.title){F("title").setCustomValidity("Give the risk a title");F("title").reportValidity();F("title").setCustomValidity("");return}
+  var acts=F("actions").value.split("\n").map(function(s){return s.trim()}).filter(Boolean);
+  var m={strategy:F("strategy").value,actions:acts,trigger:F("trigger").value.trim(),contingency:F("cont").value.trim(),src:mitSrc||"edited"};
+  if(!acts.length&&!m.trigger&&!m.contingency)m=mitFrom(suggest(fr)[0].rule);
+  snap();
+  if(editing){Object.assign(editing,fr);editing.mit=m;dlg.close();commit(editing.code+" saved",true)}
+  else{var r=mk(fr,state.seq++);Object.assign(r,{rp:fr.rp,ri:fr.ri});r.mit=m;state.risks.push(r);dlg.close();commit(r.code+" added",true)}
+});
+$("#btn-del").onclick=function(){
+  if(!editing||!confirm("Delete "+editing.code+" \""+editing.title+"\"?"))return;
+  snap();var c=editing.code;state.risks=state.risks.filter(function(r){return r!==editing});dlg.close();commit(c+" deleted",true);
+};
+
+/* ---------- files ---------- */
+function slug(s){return String(s).replace(/[\\/:*?"<>|]+/g,"").replace(/\s+/g,"-").slice(0,60)||"project"}
+function fileName(kind,ext){return kind+"-"+slug(state.code||state.name)+"-"+today()+"."+ext}
+function download(name,type,text){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500)}
+function downloadCsv(){
+  var head=["Rank","ID","Risk","Description","Category","Owner","Inherent P","Inherent I","Inherent score","Inherent rating","Residual P","Residual I","Residual score","Residual rating","Strategy","Actions","Early-warning trigger","Contingency","Target date","Status"];
+  var rows=ranked().map(function(r,k){return [k+1,r.code,r.title,r.desc,CAT[r.cat],r.owner,r.p,r.i,inh(r),bandName(band(inh(r))),r.rp,r.ri,res(r),bandName(band(res(r))),r.mit.strategy,r.mit.actions.map(function(a,j){return (j+1)+". "+a}).join("\n"),r.mit.trigger,r.mit.contingency,r.due,r.status]});
+  var csv=[head].concat(rows).map(function(row){return row.map(function(v){v=String(v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");
+  download(fileName("risk-register","csv"),"text/csv;charset=utf-8","﻿"+csv);
+}
+
+/* ---------- report ---------- */
+function miniMap(get,title){
+  var h='<div class="r-map"><h4>'+title+'</h4><table class="r-hm">';
+  var open=openRisks();
+  for(var p=5;p>=1;p--){
+    h+='<tr><td class="ax">'+p+'</td>';
+    for(var i=1;i<=5;i++){var s=p*i,here=open.filter(function(r){var q=get(r);return q[0]===p&&q[1]===i});
+      h+='<td class="b-'+band(s)+'"><b>'+s+'</b>'+here.map(function(r){return esc(r.code)}).join(" ")+'</td>'}
+    h+='</tr>';
+  }
+  h+='<tr class="xl"><td></td>'+[1,2,3,4,5].map(function(i){return '<td>'+i+'</td>'}).join("")+'</tr></table><div class="r-cap">Probability (rows) × Impact (columns) · open risks</div></div>';
+  return h;
+}
+function buildReport(){
+  var open=openRisks(),all=ranked(),c={critical:0,high:0,medium:0,low:0};open.forEach(function(r){c[band(inh(r))]++});
+  var ti=0,tr=0;open.forEach(function(r){ti+=inh(r);tr+=res(r)});
+  var red=ti?Math.round((1-tr/ti)*100):0,lt=open.filter(late),now=new Date();
+  var catRows=CATS.map(function(x){var rs=open.filter(function(r){return r.cat===x[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:x,rs:rs,n:n,max:rs.reduce(function(m,r){return Math.max(m,inh(r))},0)}}).filter(function(x){return x.rs.length}).sort(function(a,b){return b.max-a.max||b.rs.length-a.rs.length});
+  var keyRisks=all.filter(function(r){return r.status!=="Closed"&&inh(r)>=10});
+  // plain-language summary
+  var sum=[];
+  sum.push(open.length+" open risks are recorded: "+c.critical+" critical, "+c.high+" high, "+c.medium+" medium and "+c.low+" low.");
+  if(catRows.length)sum.push("The highest exposure is in "+catRows.slice(0,2).map(function(x){return x.c[1]}).join(" and ")+".");
+  if(ti)sum.push("If the planned responses work, total exposure falls from a score of "+ti+" to "+tr+" ("+red+"% lower).");
+  sum.push(lt.length?lt.length+" response"+(lt.length>1?"s are":" is")+" past target date: "+lt.map(function(r){return r.code}).join(", ")+".":"No responses are past their target date.");
+  var noOwner=open.filter(function(r){return !r.owner}).length;if(noOwner)sum.push(noOwner+" open risk"+(noOwner>1?"s have":" has")+" no named owner.");
+  var bandsResid=open.filter(function(r){return res(r)>=10}).map(function(r){return r.code});
+  if(bandsResid.length)sum.push("Still high or critical after response: "+bandsResid.join(", ")+". These need escalation or a stronger response.");
+
+  var h='<div class="r-band"><span class="lg"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1C6FE0"/><rect x="6" y="6" width="5" height="5" rx="1" fill="#fff"/><rect x="13" y="6" width="5" height="5" rx="1" fill="#fff" opacity=".7"/><rect x="6" y="13" width="5" height="5" rx="1" fill="#fff" opacity=".5"/><rect x="13" y="13" width="5" height="5" rx="1" fill="#fff" opacity=".8"/></svg>PM Hub · Risk Management</span><span class="r-conf">'+esc(state.cls.toUpperCase())+'</span></div>';
+  h+='<div class="r-title">Project Risk Report</div><div class="r-h1">'+esc(state.name)+'</div>';
+  h+='<div class="r-meta"><div><span>Project code</span><b>'+esc(state.code||"—")+'</b></div><div><span>Project manager</span><b>'+esc(state.pm||"—")+'</b></div><div><span>Business unit</span><b>'+esc(state.unit||"—")+'</b></div>'+
+     '<div><span>Report date</span><b>'+fmtDate(iso(now))+'</b></div><div><span>Data as of</span><b>'+(state.savedAt?fmtTime(state.savedAt):"—")+'</b></div><div><span>Risks in register</span><b>'+state.risks.length+' ('+open.length+' open)</b></div></div>';
+
+  h+='<div class="r-h2"><span>1</span>Executive summary</div>';
+  h+='<div class="r-kpis"><div class="r-kpi"><span>Open risks</span><b>'+open.length+'</b><small>'+(state.risks.length-open.length)+' closed</small></div>'+
+     '<div class="r-kpi b-critical"><span>Critical</span><b>'+c.critical+'</b><small>Score 20–25</small></div>'+
+     '<div class="r-kpi b-high"><span>High</span><b>'+c.high+'</b><small>Score 10–16</small></div>'+
+     '<div class="r-kpi b-low"><span>Exposure reduction</span><b>'+(ti?red+"%":"—")+'</b><small>Score '+ti+' → '+tr+'</small></div>'+
+     '<div class="r-kpi'+(lt.length?' b-critical':'')+'"><span>Overdue responses</span><b>'+lt.length+'</b><small>Past target date</small></div></div>';
+  h+='<ul class="r-sum">'+sum.map(function(s){return '<li>'+esc(s)+'</li>'}).join("")+'</ul>';
+
+  h+='<div class="r-h2"><span>2</span>Risk heat map</div><div class="r-maps">'+miniMap(function(r){return [r.p,r.i]},"Inherent rating (before response)")+miniMap(function(r){return [r.rp,r.ri]},"Residual rating (after planned response)")+'</div>';
+
+  h+='<div class="r-h2"><span>3</span>Exposure by category</div><div class="r-scroll"><table class="r-t"><thead><tr><th>Category</th><th class="c">Open</th><th class="c">Critical</th><th class="c">High</th><th class="c">Medium</th><th class="c">Low</th><th class="c">Highest score</th></tr></thead><tbody>'+
+     (catRows.length?catRows.map(function(x){return '<tr><td>'+esc(x.c[1])+'</td><td class="c">'+x.rs.length+'</td><td class="c">'+(x.n.critical||"–")+'</td><td class="c">'+(x.n.high||"–")+'</td><td class="c">'+(x.n.medium||"–")+'</td><td class="c">'+(x.n.low||"–")+'</td><td class="c"><span class="r-pill b-'+band(x.max)+'">'+x.max+'</span></td></tr>'}).join(""):'<tr><td colspan="7">No open risks.</td></tr>')+'</tbody></table></div>';
+
+  h+='<div class="r-h2"><span>4</span>Key risks and response plans <small style="font-weight:600;color:var(--muted);font-size:8pt">(inherent score 10 or more)</small></div>';
+  h+=keyRisks.length?keyRisks.map(function(r){
+    var b=band(inh(r));
+    return '<div class="r-risk b-'+b+'"><div class="hd"><span class="code">'+esc(r.code)+'</span><b>'+esc(r.title)+'</b><span class="r-pill b-'+b+'">'+inh(r)+' '+bandName(b)+'</span></div>'+
+      '<div class="mt">'+esc(CAT[r.cat])+' · Owner: '+esc(r.owner||"—")+' · Status: '+r.status+' · Target: <span class="'+(late(r)?"r-late":"")+'">'+fmtDate(r.due)+(late(r)?" (overdue)":"")+'</span></div>'+
+      '<div class="gr">'+(r.desc?'<span>Description</span><div>'+esc(r.desc)+'</div>':'')+
+      '<span>Rating</span><div>Inherent P'+r.p+' × I'+r.i+' = '+inh(r)+' → Residual P'+r.rp+' × I'+r.ri+' = <span class="r-pill b-'+band(res(r))+'">'+res(r)+' '+bandName(band(res(r)))+'</span></div>'+
+      '<span>Strategy</span><div><b>'+r.mit.strategy+'</b></div>'+
+      '<span>Actions</span><div>'+(r.mit.actions.length?'<ol>'+r.mit.actions.map(function(a){return '<li>'+esc(a)+'</li>'}).join("")+'</ol>':"—")+'</div>'+
+      '<span>Early warning</span><div>'+esc(r.mit.trigger||"—")+'</div><span>Contingency</span><div>'+esc(r.mit.contingency||"—")+'</div></div></div>';
+  }).join(""):'<p>No open risks score 10 or more.</p>';
+
+  h+='<div class="r-h2"><span>5</span>Full risk register</div><div class="r-scroll"><table class="r-t"><thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Owner</th><th class="c">Inh.</th><th class="c">Res.</th><th>Strategy</th><th>Target</th><th>Status</th></tr></thead><tbody>'+
+     (all.length?all.map(function(r){return '<tr><td class="nw"><b>'+esc(r.code)+'</b></td><td>'+esc(r.title)+'</td><td>'+esc(CAT[r.cat])+'</td><td>'+esc(r.owner||"—")+'</td><td class="c"><span class="r-pill b-'+band(inh(r))+'">'+inh(r)+'</span></td><td class="c"><span class="r-pill b-'+band(res(r))+'">'+res(r)+'</span></td><td>'+r.mit.strategy+'</td><td class="nw '+(late(r)?"r-late":"")+'">'+fmtDate(r.due)+'</td><td>'+r.status+'</td></tr>'}).join(""):'<tr><td colspan="9">No risks recorded.</td></tr>')+'</tbody></table></div>';
+
+  h+='<div class="r-h2"><span>A</span>Rating method</div><div class="r-scale">'+
+     '<table class="r-t"><thead><tr><th>P</th><th>Probability</th></tr></thead><tbody>'+[5,4,3,2,1].map(function(n){return '<tr><td><b>'+n+'</b></td><td><b>'+PL[n]+'</b><br>'+PD[n]+'</td></tr>'}).join("")+'</tbody></table>'+
+     '<table class="r-t"><thead><tr><th>I</th><th>Impact</th></tr></thead><tbody>'+[5,4,3,2,1].map(function(n){return '<tr><td><b>'+n+'</b></td><td><b>'+IL[n]+'</b><br>'+ID[n]+'</td></tr>'}).join("")+'</tbody></table>'+
+     '<table class="r-t"><thead><tr><th>Score = P × I</th><th>Rating</th></tr></thead><tbody>'+BANDS.map(function(b){return '<tr><td>'+b[2]+'</td><td><span class="r-pill b-'+b[0]+'">'+b[1]+'</span></td></tr>'}).join("")+'</tbody></table></div>'+
+     '<p style="font-size:8pt;color:var(--muted);margin-top:8px">Inherent rating is before the response plan; residual rating is the expected level once planned actions are complete. Response plans marked as library drafts are starting points and should be reviewed by the risk owner.</p>';
+  h+='<div class="r-foot"><span>Generated '+fmtTime(now.getTime())+' with PM Hub Risk Register</span><span>PM Hub by Navarat Veerawongchai · © 2026 · MIT License</span></div>';
+  return h;
+}
+var prevTitle=document.title;
+function openReport(){$("#paper").innerHTML=buildReport();$("#rp").hidden=false;document.body.style.overflow="hidden";$("#rp").scrollTop=0;$("#rp-pdf").focus()}
+function closeReport(){$("#rp").hidden=true;document.body.style.overflow="";$("#btn-report").focus()}
+$("#btn-report").onclick=openReport;
+$("#rp-close").onclick=closeReport;
+$("#rp-csv").onclick=downloadCsv;
+$("#rp-pdf").onclick=function(){
+  prevTitle=document.title;document.title="Risk-Report_"+slug(state.code||state.name)+"_"+today(); // becomes the suggested PDF file name
+  window.print();
+};
+window.addEventListener("afterprint",function(){document.title=prevTitle});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("#rp").hidden&&!dlg.open)closeReport()});
+
+/* ---------- toast + undo ---------- */
+var tt;
+function toast(msg,canUndo){
+  $("#toast-msg").textContent=msg;$("#toast-undo").hidden=!canUndo||!undoSnap;$("#toast").hidden=false;
+  clearTimeout(tt);tt=setTimeout(function(){$("#toast").hidden=true},6000);
+}
+$("#toast-undo").onclick=function(){if(!undoSnap)return;state=clean(JSON.parse(undoSnap));undoSnap=null;save();render();toast("Undone",false)};
+window.addEventListener("storage",function(e){if(e.key===KEY){var s=null;try{s=clean(JSON.parse(e.newValue))}catch(x){}if(s){state=s;render();showSaved()}}});
+
+state=load();save();render();
+if(location.hash==="#report")openReport();
+})();
+</script>
+</body>
+</html>

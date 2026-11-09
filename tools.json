@@ -28,6 +28,15 @@
       "description": "Track your own KPIs against Min, Standard and Stretch targets. Log each achievement and attach evidence files, links or screenshots."
     },
     {
+      "id": "risk-matrix",
+      "name": "Risk Register & Heat Map",
+      "group": "Risk Management",
+      "icon": "risk",
+      "path": "risk-matrix/",
+      "status": "live",
+      "description": "Rate risks on a 5x5 heat map with drag and drop, get a recommended response plan for common banking project risks, and download a PDF risk report."
+    },
+    {
       "id": "wbs",
       "name": "Work Breakdown Structure",
       "icon": "wbs",
