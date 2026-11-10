@@ -1,6 +1,15 @@
 {
   "tools": [
     {
+      "id": "individual-kpi",
+      "name": "Develop Team - Individual KPIs",
+      "group": "Resource Management",
+      "icon": "kpi",
+      "path": "individual-kpi/",
+      "status": "live",
+      "description": "Track your own KPIs against Min, Standard and Stretch targets. Log each achievement and attach evidence files, links or screenshots."
+    },
+    {
       "id": "timeline",
       "name": "Timeline Planner",
       "icon": "timeline",
@@ -17,15 +26,6 @@
       "status": "live",
       "description": "Track every project activity by phase, with status, percent complete, dates and owner. See what is overdue, due soon or missing dates at a glance.",
       "group": "Schedule Management"
-    },
-    {
-      "id": "individual-kpi",
-      "name": "Develop Team - Individual KPIs",
-      "group": "Resource Management",
-      "icon": "kpi",
-      "path": "individual-kpi/",
-      "status": "live",
-      "description": "Track your own KPIs against Min, Standard and Stretch targets. Log each achievement and attach evidence files, links or screenshots."
     },
     {
       "id": "risk-matrix",
