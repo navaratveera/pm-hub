@@ -7,7 +7,13 @@
       "icon": "kpi",
       "path": "individual-kpi/",
       "status": "live",
-      "description": "Track your own KPIs against Min, Standard and Stretch targets. Log each achievement and attach evidence files, links or screenshots."
+      "description": "Track your own KPIs against Min, Standard and Stretch targets. Log each achievement and attach evidence files, links or screenshots.",
+      "builders": [
+        {
+          "name": "Navarat Veerawongchai",
+          "github": "navaratveera"
+        }
+      ]
     },
     {
       "id": "timeline",
@@ -16,7 +22,13 @@
       "path": "timeline/",
       "status": "live",
       "description": "Enter start and end dates for each SDLC activity and get a slide-ready Gantt timeline with swimlanes, holidays, milestones and status colors.",
-      "group": "Project Management"
+      "group": "Project Management",
+      "builders": [
+        {
+          "name": "Navarat Veerawongchai",
+          "github": "navaratveera"
+        }
+      ]
     },
     {
       "id": "activity-tracker",
@@ -25,7 +37,13 @@
       "path": "activity-tracker/",
       "status": "live",
       "description": "Track every project activity by phase, with status, percent complete, dates and owner. See what is overdue, due soon or missing dates at a glance.",
-      "group": "Schedule Management"
+      "group": "Schedule Management",
+      "builders": [
+        {
+          "name": "Navarat Veerawongchai",
+          "github": "navaratveera"
+        }
+      ]
     },
     {
       "id": "risk-matrix",
@@ -34,7 +52,13 @@
       "icon": "risk",
       "path": "risk-matrix/",
       "status": "live",
-      "description": "Rate risks on a 5x5 heat map with drag and drop, get a recommended response plan for common banking project risks, and download a PDF risk report."
+      "description": "Rate risks on a 5x5 heat map with drag and drop, get a recommended response plan for common banking project risks, and download a PDF risk report.",
+      "builders": [
+        {
+          "name": "Navarat Veerawongchai",
+          "github": "navaratveera"
+        }
+      ]
     },
     {
       "id": "wbs",
@@ -43,7 +67,13 @@
       "path": "wbs/",
       "status": "soon",
       "description": "Break a project into deliverables and work packages with automatic numbering, effort roll-up and a tree chart. Send work packages straight to the Timeline.",
-      "group": "Scope Management - Coming soon"
+      "group": "Scope Management - Coming soon",
+      "builders": [
+        {
+          "name": "Navarat Veerawongchai",
+          "github": "navaratveera"
+        }
+      ]
     }
   ]
 }
