@@ -343,7 +343,7 @@ table.r-t{width:100%;border-collapse:collapse;font-size:8.3pt}
       <input type="file" id="file" accept=".json,application/json" hidden>
     </div>
   </div>
-  <div class="exnote" id="exnote" hidden><span class="gtype">EXAMPLE</span><span>Made-up project to show how the tool works. Your own register is kept separately.</span><button class="link" id="btn-start" type="button">Start my own register →</button></div>
+  <div class="exnote" id="exnote" hidden><span class="gtype">EXAMPLE</span><span>Made-up project to show how the tool works. To add risks, start your own register. It is kept separately.</span><button class="link" id="btn-start" type="button">Start my own register →</button></div>
 
   <section class="stats" id="stats" aria-label="Risk summary"></section>
 
@@ -747,7 +747,7 @@ function render(){
   $("#pname").textContent=(ex?"Example: ":"")+state.name;document.title=(ex?"Example: ":"")+state.name+" · Risk Register";
   $("#pmeta").innerHTML=[state.code,state.pm?"PM "+state.pm:"",state.unit,state.risks.length+" risks"].filter(Boolean).map(esc).join(" · ")+" · "+'<span id="asaved"></span>';
   $("#exnote").hidden=!ex;showSaved();
-  $("#btn-ex").hidden=ex;$("#m-resetex").hidden=!ex;$("#m-clear").hidden=ex;
+  $("#btn-ex").hidden=ex;$("#btn-add").textContent=ex?"Start my own register":"+ Add risk";$("#btn-add").title=ex?"The example is read-only for new risks. Start your own register to add risks.":"";$("#m-resetex").hidden=!ex;$("#m-clear").hidden=ex;
   fillCatLists();renderStats();renderMap();renderCats();renderTop();renderTable();
 }
 function renderStats(){
@@ -990,6 +990,7 @@ F("cat").addEventListener("input",function(){catTouched=true;$("#f-catauto").tex
 ["rp","ri"].forEach(function(k){F(k).addEventListener("change",function(){resTouched=true;updAssess()})});
 ["strategy","actions","trigger","cont"].forEach(function(k){F(k).addEventListener("input",function(){mitSrc="edited";showSrc();updSugg();updQuick()})});
 function openDlg(id){
+  if(!id&&mode==="example"){switchMode("mine");return} // the example takes no new risks: adding starts the user's own register
   editing=id?byId(id):null;
   $("#dlg-title").textContent=editing?editing.code+" · Edit risk":"Add risk";
   $("#btn-save").textContent=editing?"Save changes":"Add risk";
