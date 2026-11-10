@@ -378,7 +378,7 @@ table.r-t{width:100%;border-collapse:collapse;font-size:8.3pt}
     <div class="dlg-b">
       <div class="sec">
         <label class="f">What could go wrong? *<input id="f-title" required maxlength="160" placeholder="e.g. Vendor misses API delivery date" autocomplete="off"></label>
-        <div class="fg"><label class="f"><span>Category <span class="auto" id="f-catauto"></span></span><select id="f-cat"></select></label><label class="f"><span>Risk owner <span class="opt">optional</span></span><input id="f-owner" maxlength="80" placeholder="Role or name"></label></div>
+        <div class="fg"><label class="f"><span>Category <span class="auto" id="f-catauto"></span></span><input id="f-cat" list="catlist" maxlength="60" autocomplete="off" placeholder="Pick or type a category"><datalist id="catlist"></datalist></label><label class="f"><span>Risk owner <span class="opt">optional</span></span><input id="f-owner" maxlength="80" placeholder="Role or name"></label></div>
         <div class="fg">
           <div class="f"><span>How likely? <b class="pk-l" id="pk-p-l"></b></span><div class="pick" data-k="p" role="group" aria-label="Probability, 1 rare to 5 almost certain"></div></div>
           <div class="f"><span>How bad if it happens? <b class="pk-l" id="pk-i-l"></b></span><div class="pick" data-k="i" role="group" aria-label="Impact, 1 minimal to 5 severe"></div></div>
@@ -617,6 +617,16 @@ window.RISK_RULES = [
 var KEY="pmhub.riskmatrix.v1";
 var CATS=[["regulatory","Regulatory & Compliance"],["cyber","Cyber Security"],["vendor","Third-party & Vendor"],["core","Core Banking & Integration"],["migration","Data Migration"],["resilience","Operational Resilience"],["fraud","Fraud"],["change","Change & Adoption"],["resource","Resources & Schedule"],["other","Other"]];
 var CAT={};CATS.forEach(function(c){CAT[c[0]]=c[1]});
+function catName(c){return CAT[c]||c||"Other"}
+function toCat(v){ // built-in label or id -> its id; anything else is the user's own category, kept as typed
+  v=String(v||"").replace(/\s+/g," ").trim().slice(0,60);if(!v)return "other";var l=v.toLowerCase();
+  for(var k=0;k<CATS.length;k++)if(CATS[k][0]===l||CATS[k][1].toLowerCase()===l)return CATS[k][0];
+  var own=allCats().filter(function(c){return c[0].toLowerCase()===l})[0];return own?own[0]:v}
+function allCats(){var seen={},own=[];(state?state.risks:[]).forEach(function(r){if(!CAT[r.cat]&&!seen[r.cat]){seen[r.cat]=1;own.push([r.cat,r.cat])}});
+  own.sort(function(a,b){return a[1].localeCompare(b[1])});return CATS.slice(0,-1).concat(own,[CATS[CATS.length-1]])}
+function fillCatLists(){var cs=allCats();if(ui.cat&&!cs.some(function(c){return c[0]===ui.cat}))ui.cat="";
+  $("#fcat").innerHTML='<option value="">All categories</option>'+cs.map(function(c){return '<option value="'+esc(c[0])+'">'+esc(c[1])+'</option>'}).join("");$("#fcat").value=ui.cat;
+  $("#catlist").innerHTML=cs.map(function(c){return '<option value="'+esc(c[1])+'"></option>'}).join("")}
 var PL=["","Rare","Unlikely","Possible","Likely","Almost certain"];
 var IL=["","Minimal","Minor","Moderate","Major","Severe"];
 var PD=["","Less than 10% chance during the project","10–30% chance","30–50% chance","50–80% chance","More than 80% chance"];
@@ -693,7 +703,7 @@ function clean(o){
   o.risks.forEach(function(r){
     if(!r||!r.title)return;
     var m=r.mit||{},p=clamp(r.p,3),i=clamp(r.i,3);
-    s.risks.push({id:String(r.id||("r"+Math.random().toString(36).slice(2,10))),code:String(r.code||"").slice(0,12),title:String(r.title).slice(0,160),desc:String(r.desc||"").slice(0,2000),cat:CAT[r.cat]?r.cat:"other",owner:String(r.owner||"").slice(0,80),
+    s.risks.push({id:String(r.id||("r"+Math.random().toString(36).slice(2,10))),code:String(r.code||"").slice(0,12),title:String(r.title).slice(0,160),desc:String(r.desc||"").slice(0,2000),cat:CAT[r.cat]?r.cat:(String(r.cat||"").replace(/\s+/g," ").trim().slice(0,60)||"other"),owner:String(r.owner||"").slice(0,80),
       p:p,i:i,rp:clamp(r.rp,p),ri:clamp(r.ri,i),due:/^\d{4}-\d{2}-\d{2}$/.test(r.due||"")?r.due:"",status:STATUSES.indexOf(r.status)>=0?r.status:"Open",
       mit:{strategy:STRATS.indexOf(m.strategy)>=0?m.strategy:"Reduce",actions:Array.isArray(m.actions)?m.actions.map(String).filter(Boolean).slice(0,30):[],trigger:String(m.trigger||""),contingency:String(m.contingency||""),src:String(m.src||"edited")}});
   });
@@ -738,7 +748,7 @@ function render(){
   $("#pmeta").innerHTML=[state.code,state.pm?"PM "+state.pm:"",state.unit,state.risks.length+" risks"].filter(Boolean).map(esc).join(" · ")+" · "+'<span id="asaved"></span>';
   $("#exnote").hidden=!ex;showSaved();
   $("#btn-ex").hidden=ex;$("#m-resetex").hidden=!ex;$("#m-clear").hidden=ex;
-  renderStats();renderMap();renderCats();renderTop();renderTable();
+  fillCatLists();renderStats();renderMap();renderCats();renderTop();renderTable();
 }
 function renderStats(){
   var open=openRisks(),c={critical:0,high:0,medium:0,low:0};open.forEach(function(r){c[band(inh(r))]++});
@@ -775,7 +785,7 @@ function renderMap(){
   wrap.innerHTML=h;
 }
 function renderCats(){
-  var open=openRisks(),rows=CATS.map(function(c){var rs=open.filter(function(r){return r.cat===c[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:c,rs:rs,n:n}}).filter(function(x){return x.rs.length});
+  var open=openRisks(),rows=allCats().map(function(c){var rs=open.filter(function(r){return r.cat===c[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:c,rs:rs,n:n}}).filter(function(x){return x.rs.length});
   rows.sort(function(a,b){return b.n.critical-a.n.critical||b.n.high-a.n.high||b.rs.length-a.rs.length});
   var max=Math.max.apply(null,rows.map(function(x){return x.rs.length}).concat([1]));
   $("#cats").innerHTML=rows.length?rows.map(function(x){
@@ -793,7 +803,7 @@ function filtered(){
     if(ui.cat&&r.cat!==ui.cat)return false;
     if(ui.band&&band(inh(r))!==ui.band)return false;
     if(ui.late&&!late(r))return false;
-    if(q&&[r.code,r.title,r.desc,r.owner,CAT[r.cat],r.mit.actions.join(" ")].join(" ").toLowerCase().indexOf(q)<0)return false;
+    if(q&&[r.code,r.title,r.desc,r.owner,catName(r.cat),r.mit.actions.join(" ")].join(" ").toLowerCase().indexOf(q)<0)return false;
     return true;
   });
 }
@@ -808,7 +818,7 @@ function renderTable(){
   list.map(function(r){
     return '<tr data-id="'+esc(r.id)+'" class="'+(r.status==="Closed"?"closed":"")+'"><td class="num">'+(all.indexOf(r)+1)+'</td><td class="c-id"><span class="code">'+esc(r.code)+'</span></td>'+
       '<td class="c-risk"><button class="rt" type="button">'+esc(r.title)+'</button>'+(r.desc?'<div class="ds">'+esc(r.desc)+'</div>':'')+'</td>'+
-      '<td class="c-cat">'+esc(CAT[r.cat])+'</td><td data-l="Owner">'+esc(r.owner||"—")+'</td>'+
+      '<td class="c-cat">'+esc(catName(r.cat))+'</td><td data-l="Owner">'+esc(r.owner||"—")+'</td>'+
       '<td data-l="Inherent">'+pill(inh(r))+'</td><td data-l="Residual">'+pill(res(r))+'</td>'+
       '<td data-l="Response"><span class="strat">'+r.mit.strategy+'</span></td>'+
       '<td data-l="Target" class="'+(late(r)?"late":"")+'">'+fmtDate(r.due)+(late(r)?" · overdue":"")+'</td>'+
@@ -881,7 +891,6 @@ document.addEventListener("click",function(e){
 });
 $("#btn-add").onclick=function(){openDlg(null)};
 $("#q").addEventListener("input",function(){ui.q=this.value;renderTable()});
-$("#fcat").innerHTML='<option value="">All categories</option>'+CATS.map(function(c){return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'}).join("");
 $("#fcat").onchange=function(){ui.cat=this.value;renderTable()};
 $("#fclosed").onclick=function(){ui.closed=!ui.closed;render()};
 $("#fclear").onclick=function(){ui.band="";ui.late=false;ui.cat="";ui.q="";ui.closed=false;$("#q").value="";$("#fcat").value="";render()};
@@ -922,7 +931,6 @@ $("#pform").addEventListener("submit",function(e){
 /* ---------- risk dialog ---------- */
 var dlg=$("#dlg"),editing=null,mitSrc="",catTouched=false,resTouched=false;
 function F(id){return $("#f-"+id)}
-$("#f-cat").innerHTML=CATS.map(function(c){return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'}).join("");
 F("rp").innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+PL[n]+'</option>'}).join("");
 F("ri").innerHTML=[5,4,3,2,1].map(function(n){return '<option value="'+n+'">'+n+' · '+IL[n]+'</option>'}).join("");
 F("status").innerHTML=STATUSES.map(function(s){return '<option>'+s+'</option>'}).join("");
@@ -936,7 +944,7 @@ function setPick(k,v){
   document.querySelectorAll('.pick[data-k="'+k+'"] button').forEach(function(b){b.setAttribute("aria-pressed",+b.dataset.v===v)});
   $("#pk-"+k+"-l").textContent=v+" · "+(k==="p"?PL:IL)[v];
 }
-function formRisk(){return {title:F("title").value.trim(),desc:F("desc").value.trim(),cat:F("cat").value,owner:F("owner").value.trim(),p:+F("p").value,i:+F("i").value,rp:+F("rp").value,ri:+F("ri").value,due:F("due").value,status:F("status").value}}
+function formRisk(){return {title:F("title").value.trim(),desc:F("desc").value.trim(),cat:toCat(F("cat").value),owner:F("owner").value.trim(),p:+F("p").value,i:+F("i").value,rp:+F("rp").value,ri:+F("ri").value,due:F("due").value,status:F("status").value}}
 function mitEmpty(){return !F("actions").value.trim()&&!F("trigger").value.trim()&&!F("cont").value.trim()}
 function setMit(m){F("strategy").value=m.strategy;F("actions").value=m.actions.join("\n");F("trigger").value=m.trigger;F("cont").value=m.contingency;mitSrc=m.src;showSrc()}
 function showSrc(){var r=mitSrc.indexOf("library:")===0?RULE[mitSrc.slice(8)]:null;F("src").textContent=r?"· Draft from PM Hub library: review before approval":(mitSrc?"· Tailored by you":"")}
@@ -961,7 +969,7 @@ function updQuick(){
 function detectCat(){
   if(catTouched)return;
   var m=suggest({title:F("title").value,desc:F("desc").value,cat:""})[0];
-  if(m.hits.length){F("cat").value=m.rule.cat;$("#f-catauto").textContent="· auto-detected"}else $("#f-catauto").textContent="";
+  if(m.hits.length){F("cat").value=catName(m.rule.cat);$("#f-catauto").textContent="· auto-detected"}else $("#f-catauto").textContent="";
 }
 function updSugg(){
   var fr=formRisk(),list=suggest(fr),top=list[0],using=mitSrc==="library:"+top.rule.id;
@@ -978,7 +986,7 @@ $("#sugg").addEventListener("click",function(e){
 });
 function onText(){detectCat();autoPlan();updSugg();updQuick()}
 F("title").addEventListener("input",onText);F("desc").addEventListener("input",onText);
-F("cat").addEventListener("change",function(){catTouched=true;$("#f-catauto").textContent="";autoPlan();updSugg();updQuick()});
+F("cat").addEventListener("input",function(){catTouched=true;$("#f-catauto").textContent="";autoPlan();updSugg();updQuick()});
 ["rp","ri"].forEach(function(k){F(k).addEventListener("change",function(){resTouched=true;updAssess()})});
 ["strategy","actions","trigger","cont"].forEach(function(k){F(k).addEventListener("input",function(){mitSrc="edited";showSrc();updSugg();updQuick()})});
 function openDlg(id){
@@ -987,7 +995,7 @@ function openDlg(id){
   $("#btn-save").textContent=editing?"Save changes":"Add risk";
   $("#btn-del").hidden=!editing;
   var r=editing||{title:"",desc:"",cat:"other",owner:"",p:3,i:3,rp:3,ri:3,due:"",status:"Open",mit:{strategy:"Reduce",actions:[],trigger:"",contingency:"",src:""}};
-  ["title","desc","cat","owner","rp","ri","due","status"].forEach(function(k){F(k).value=r[k]});
+  ["title","desc","owner","rp","ri","due","status"].forEach(function(k){F(k).value=r[k]});F("cat").value=editing?catName(r.cat):"";
   setPick("p",r.p);setPick("i",r.i);
   catTouched=!!editing;resTouched=!!editing&&(r.rp!==r.p||r.ri!==r.i);$("#f-catauto").textContent="";
   setMit(r.mit);updAssess();updSugg();updQuick();
@@ -1016,7 +1024,7 @@ function fileName(kind,ext){return kind+"-"+slug(state.code||state.name)+"-"+tod
 function download(name,type,text){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500)}
 function downloadCsv(){
   var head=["Rank","ID","Risk","Description","Category","Owner","Inherent P","Inherent I","Inherent score","Inherent rating","Residual P","Residual I","Residual score","Residual rating","Strategy","Actions","Early-warning trigger","Contingency","Target date","Status"];
-  var rows=ranked().map(function(r,k){return [k+1,r.code,r.title,r.desc,CAT[r.cat],r.owner,r.p,r.i,inh(r),bandName(band(inh(r))),r.rp,r.ri,res(r),bandName(band(res(r))),r.mit.strategy,r.mit.actions.map(function(a,j){return (j+1)+". "+a}).join("\n"),r.mit.trigger,r.mit.contingency,r.due,r.status]});
+  var rows=ranked().map(function(r,k){return [k+1,r.code,r.title,r.desc,catName(r.cat),r.owner,r.p,r.i,inh(r),bandName(band(inh(r))),r.rp,r.ri,res(r),bandName(band(res(r))),r.mit.strategy,r.mit.actions.map(function(a,j){return (j+1)+". "+a}).join("\n"),r.mit.trigger,r.mit.contingency,r.due,r.status]});
   var csv=[head].concat(rows).map(function(row){return row.map(function(v){v=String(v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");
   download(fileName("risk-register","csv"),"text/csv;charset=utf-8","﻿"+csv);
 }
@@ -1038,7 +1046,7 @@ function buildReport(){
   var open=openRisks(),all=ranked(),c={critical:0,high:0,medium:0,low:0};open.forEach(function(r){c[band(inh(r))]++});
   var ti=0,tr=0;open.forEach(function(r){ti+=inh(r);tr+=res(r)});
   var red=ti?Math.round((1-tr/ti)*100):0,lt=open.filter(late),now=new Date();
-  var catRows=CATS.map(function(x){var rs=open.filter(function(r){return r.cat===x[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:x,rs:rs,n:n,max:rs.reduce(function(m,r){return Math.max(m,inh(r))},0)}}).filter(function(x){return x.rs.length}).sort(function(a,b){return b.max-a.max||b.rs.length-a.rs.length});
+  var catRows=allCats().map(function(x){var rs=open.filter(function(r){return r.cat===x[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:x,rs:rs,n:n,max:rs.reduce(function(m,r){return Math.max(m,inh(r))},0)}}).filter(function(x){return x.rs.length}).sort(function(a,b){return b.max-a.max||b.rs.length-a.rs.length});
   var keyRisks=all.filter(function(r){return r.status!=="Closed"&&inh(r)>=10});
   // plain-language summary
   var sum=[];
@@ -1073,7 +1081,7 @@ function buildReport(){
   h+=keyRisks.length?keyRisks.map(function(r){
     var b=band(inh(r));
     return '<div class="r-risk b-'+b+'"><div class="hd"><span class="code">'+esc(r.code)+'</span><b>'+esc(r.title)+'</b><span class="r-pill b-'+b+'">'+inh(r)+' '+bandName(b)+'</span></div>'+
-      '<div class="mt">'+esc(CAT[r.cat])+' · Owner: '+esc(r.owner||"—")+' · Status: '+r.status+' · Target: <span class="'+(late(r)?"r-late":"")+'">'+fmtDate(r.due)+(late(r)?" (overdue)":"")+'</span></div>'+
+      '<div class="mt">'+esc(catName(r.cat))+' · Owner: '+esc(r.owner||"—")+' · Status: '+r.status+' · Target: <span class="'+(late(r)?"r-late":"")+'">'+fmtDate(r.due)+(late(r)?" (overdue)":"")+'</span></div>'+
       '<div class="gr">'+(r.desc?'<span>Description</span><div>'+esc(r.desc)+'</div>':'')+
       '<span>Rating</span><div>Inherent P'+r.p+' × I'+r.i+' = '+inh(r)+' → Residual P'+r.rp+' × I'+r.ri+' = <span class="r-pill b-'+band(res(r))+'">'+res(r)+' '+bandName(band(res(r)))+'</span></div>'+
       '<span>Strategy</span><div><b>'+r.mit.strategy+'</b></div>'+
@@ -1082,7 +1090,7 @@ function buildReport(){
   }).join(""):'<p>No open risks score 10 or more.</p>';
 
   h+='<div class="r-h2"><span>5</span>Full risk register</div><div class="r-scroll"><table class="r-t"><thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Owner</th><th class="c">Inh.</th><th class="c">Res.</th><th>Strategy</th><th>Target</th><th>Status</th></tr></thead><tbody>'+
-     (all.length?all.map(function(r){return '<tr><td class="nw"><b>'+esc(r.code)+'</b></td><td>'+esc(r.title)+'</td><td>'+esc(CAT[r.cat])+'</td><td>'+esc(r.owner||"—")+'</td><td class="c"><span class="r-pill b-'+band(inh(r))+'">'+inh(r)+'</span></td><td class="c"><span class="r-pill b-'+band(res(r))+'">'+res(r)+'</span></td><td>'+r.mit.strategy+'</td><td class="nw '+(late(r)?"r-late":"")+'">'+fmtDate(r.due)+'</td><td>'+r.status+'</td></tr>'}).join(""):'<tr><td colspan="9">No risks recorded.</td></tr>')+'</tbody></table></div>';
+     (all.length?all.map(function(r){return '<tr><td class="nw"><b>'+esc(r.code)+'</b></td><td>'+esc(r.title)+'</td><td>'+esc(catName(r.cat))+'</td><td>'+esc(r.owner||"—")+'</td><td class="c"><span class="r-pill b-'+band(inh(r))+'">'+inh(r)+'</span></td><td class="c"><span class="r-pill b-'+band(res(r))+'">'+res(r)+'</span></td><td>'+r.mit.strategy+'</td><td class="nw '+(late(r)?"r-late":"")+'">'+fmtDate(r.due)+'</td><td>'+r.status+'</td></tr>'}).join(""):'<tr><td colspan="9">No risks recorded.</td></tr>')+'</tbody></table></div>';
 
   h+='<div class="r-h2"><span>A</span>Rating method</div><div class="r-scale">'+
      '<table class="r-t"><thead><tr><th>P</th><th>Probability</th></tr></thead><tbody>'+[5,4,3,2,1].map(function(n){return '<tr><td><b>'+n+'</b></td><td><b>'+PL[n]+'</b><br>'+PD[n]+'</td></tr>'}).join("")+'</tbody></table>'+
