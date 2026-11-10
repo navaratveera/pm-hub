@@ -116,7 +116,15 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line);border-radius:4px
 .seg button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
 
 /* side lists */
-.cat{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 22px;gap:10px;align-items:center;padding:4px 0;font-size:12.5px}
+.catrow{display:flex;align-items:center;gap:4px;border-radius:6px}
+.catrow:hover{background:var(--sky-50,#F4F8FD)}
+.cat{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 22px;gap:10px;align-items:center;padding:4px 6px;font:inherit;font-size:12.5px;color:inherit;background:none;border:0;border-radius:6px;text-align:left;cursor:pointer}
+.cat.on{background:var(--navy);color:#fff}.cat.on .bar{background:rgba(255,255,255,.25)}
+.cat .own{font-size:10.5px;color:var(--faint);margin-left:4px}.cat.on .own{color:rgba(255,255,255,.7)}
+.catx{border:0;background:none;color:var(--faint);cursor:pointer;width:20px;height:20px;border-radius:4px;font-size:14px;line-height:1;padding:0}.catx:hover{color:#B42318;background:#FDE4E1}
+.catadd{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-2)}
+.catadd input{flex:1;min-width:0;border:1px solid var(--sky-200);border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px}
+.catadd input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 2px rgba(28,111,224,.18)}
 .cat .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar{display:flex;height:6px;border-radius:2px;overflow:hidden;background:var(--sky-100)}
 .bar i{display:block;height:100%;background:var(--fill)}
@@ -622,7 +630,7 @@ function toCat(v){ // built-in label or id -> its id; anything else is the user'
   v=String(v||"").replace(/\s+/g," ").trim().slice(0,60);if(!v)return "other";var l=v.toLowerCase();
   for(var k=0;k<CATS.length;k++)if(CATS[k][0]===l||CATS[k][1].toLowerCase()===l)return CATS[k][0];
   var own=allCats().filter(function(c){return c[0].toLowerCase()===l})[0];return own?own[0]:v}
-function allCats(){var seen={},own=[];(state?state.risks:[]).forEach(function(r){if(!CAT[r.cat]&&!seen[r.cat]){seen[r.cat]=1;own.push([r.cat,r.cat])}});
+function allCats(){var seen={},own=[];(state?(state.cats||[]).concat(state.risks.map(function(r){return r.cat})):[]).forEach(function(c){if(!CAT[c]&&!seen[c.toLowerCase()]){seen[c.toLowerCase()]=1;own.push([c,c])}});
   own.sort(function(a,b){return a[1].localeCompare(b[1])});return CATS.slice(0,-1).concat(own,[CATS[CATS.length-1]])}
 function fillCatLists(){var cs=allCats();if(ui.cat&&!cs.some(function(c){return c[0]===ui.cat}))ui.cat="";
   $("#fcat").innerHTML='<option value="">All categories</option>'+cs.map(function(c){return '<option value="'+esc(c[0])+'">'+esc(c[1])+'</option>'}).join("");$("#fcat").value=ui.cat;
@@ -673,7 +681,7 @@ function mitFrom(rule){return {strategy:rule.strategy,actions:rule.actions.slice
 
 /* ---------- state ---------- */
 var state,ui={view:"inherent",q:"",cat:"",band:"",late:false,closed:false},undoSnap=null,saveOk=true;
-function blank(){return {v:2,name:"My project",code:"",pm:"",unit:"",cls:CLASSES[0],example:false,seq:1,risks:[],savedAt:0}}
+function blank(){return {v:2,name:"My project",code:"",pm:"",unit:"",cls:CLASSES[0],example:false,seq:1,risks:[],cats:[],savedAt:0}}
 function mk(o,seq){
   var r={id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),code:"R-"+pad(seq),title:o.title,desc:o.desc||"",cat:o.cat,owner:o.owner||"",p:o.p,i:o.i,rp:o.rp||o.p,ri:o.ri||o.i,due:o.due||"",status:o.status||"Open"};
   r.mit=mitFrom(suggest(r)[0].rule);return r;
@@ -710,6 +718,7 @@ function clean(o){
   var max=0;s.risks.forEach(function(r){var n=parseInt((r.code.match(/\d+/)||[0])[0],10);if(n>max)max=n});
   s.risks.forEach(function(r){if(!r.code)r.code="R-"+pad(++max)});
   s.seq=Math.max(parseInt(o.seq,10)||0,max+1);
+  s.cats=[];(Array.isArray(o.cats)?o.cats:[]).forEach(function(c){c=String(c||"").replace(/\s+/g," ").trim().slice(0,60);if(c&&!CAT[c.toLowerCase()]&&!CATS.some(function(x){return x[1].toLowerCase()===c.toLowerCase()})&&!s.cats.some(function(x){return x.toLowerCase()===c.toLowerCase()})&&s.cats.length<40)s.cats.push(c)});
   return s;
 }
 var KEY_EX="pmhub.riskmatrix.example.v1",KEY_MODE="pmhub.riskmatrix.mode",mode="example";
@@ -785,12 +794,16 @@ function renderMap(){
   wrap.innerHTML=h;
 }
 function renderCats(){
-  var open=openRisks(),rows=allCats().map(function(c){var rs=open.filter(function(r){return r.cat===c[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:c,rs:rs,n:n}}).filter(function(x){return x.rs.length});
+  var open=openRisks(),rows=allCats().map(function(c){var rs=open.filter(function(r){return r.cat===c[0]});var n={critical:0,high:0,medium:0,low:0};rs.forEach(function(r){n[band(inh(r))]++});return {c:c,rs:rs,n:n}}).filter(function(x){return x.rs.length||ui.cat===x.c[0]||!CAT[x.c[0]]});
   rows.sort(function(a,b){return b.n.critical-a.n.critical||b.n.high-a.n.high||b.rs.length-a.rs.length});
   var max=Math.max.apply(null,rows.map(function(x){return x.rs.length}).concat([1]));
-  $("#cats").innerHTML=rows.length?rows.map(function(x){
-    return '<div class="cat"><span class="nm">'+esc(x.c[1])+'</span><span class="bar" title="'+BANDS.map(function(b){return x.n[b[0]]+" "+b[1]}).join(", ")+'">'+BANDS.map(function(b){return x.n[b[0]]?'<i class="b-'+b[0]+'" style="width:'+(x.n[b[0]]/max*100)+'%"></i>':""}).join("")+'</span><b>'+x.rs.length+'</b></div>';
-  }).join(""):'<div class="hint">No open risks.</div>';
+  $("#cats").innerHTML=(rows.length?rows.map(function(x){
+    var id=x.c[0],on=ui.cat===id,own=!CAT[id],used=state.risks.some(function(r){return r.cat===id});
+    return '<div class="catrow"><button type="button" class="cat'+(on?' on':'')+'" data-cat="'+esc(id)+'" aria-pressed="'+on+'" title="'+(on?"Show all categories":"Show only "+esc(x.c[1])+" in the register")+'"><span class="nm">'+esc(x.c[1])+(own?'<span class="own">yours</span>':'')+'</span><span class="bar">'+BANDS.map(function(b){return x.n[b[0]]?'<i class="b-'+b[0]+'" style="width:'+(x.n[b[0]]/max*100)+'%"></i>':""}).join("")+'</span><b>'+x.rs.length+'</b></button>'+
+      (own&&!used?'<button type="button" class="catx" data-delcat="'+esc(id)+'" aria-label="Remove category '+esc(x.c[1])+'" title="Remove category">×</button>':'')+'</div>';
+  }).join(""):'<div class="hint">No open risks.</div>')+
+  (mode==="example"?'<p class="hint">Click a category to filter the register. Start your own register to add categories.</p>':
+   '<form class="catadd" id="catadd"><input id="catnew" maxlength="60" placeholder="New category, e.g. Branch Network" aria-label="New category name"><button class="btn small" type="submit">Add</button></form><p class="hint">Click a category to filter the register.</p>');
 }
 function renderTop(){
   var t=ranked().filter(function(r){return r.status!=="Closed"}).slice(0,5);
@@ -886,12 +899,21 @@ document.addEventListener("click",function(e){
   var v=t.closest("[data-view]");if(v){ui.view=v.dataset.view;renderMap();return}
   var bf=t.closest("[data-band]");if(bf){var k=bf.dataset.band;ui.late=false;ui.band=(k&&ui.band!==k)?k:"";render();return}
   if(t.closest("[data-late]")){ui.band="";ui.late=!ui.late;render();return}
+  var dc=t.closest("[data-delcat]");if(dc){var name=dc.dataset.delcat;state.cats=(state.cats||[]).filter(function(c){return c!==name});if(ui.cat===name)ui.cat="";save();render();toast("Category removed",false);return}
+  var cb=t.closest("[data-cat]");if(cb){var c=cb.dataset.cat;ui.cat=ui.cat===c?"":c;render();return}
   if(t.closest("[data-add]"))return openDlg(null);
   if(t.closest("[data-ex]"))return switchMode("example");
 });
 $("#btn-add").onclick=function(){openDlg(null)};
 $("#q").addEventListener("input",function(){ui.q=this.value;renderTable()});
-$("#fcat").onchange=function(){ui.cat=this.value;renderTable()};
+$("#fcat").onchange=function(){ui.cat=this.value;render()};
+document.addEventListener("submit",function(e){
+  if(e.target.id!=="catadd")return;e.preventDefault();
+  var inp=$("#catnew"),v=inp.value.replace(/\s+/g," ").trim().slice(0,60);if(!v){inp.focus();return}
+  var ex=allCats().filter(function(c){return c[0].toLowerCase()===v.toLowerCase()||c[1].toLowerCase()===v.toLowerCase()})[0];
+  if(ex){toast("\""+ex[1]+"\" is already in the list",false);inp.select();return}
+  state.cats=(state.cats||[]).concat([v]);save();render();toast("Category added. Pick it in Add risk.",false);var n=$("#catnew");if(n)n.focus();
+});
 $("#fclosed").onclick=function(){ui.closed=!ui.closed;render()};
 $("#fclear").onclick=function(){ui.band="";ui.late=false;ui.cat="";ui.q="";ui.closed=false;$("#q").value="";$("#fcat").value="";render()};
 $("#btn-start").onclick=function(){switchMode("mine")};
