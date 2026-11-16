@@ -378,7 +378,7 @@ function overdue(it,t){var f=finish(it);return f!=null&&f<t&&it.status!=="done"}
 function normItem(it){
   it=it||{};
   return{id:String(it.id||uid()),lane:String(it.lane||(it.phase&&OLD_PHASE[it.phase])||"General").trim()||"General",group:String(it.group||"").trim(),
-    name:String(it.name||""),type:it.type==="milestone"?"milestone":"task",
+    name:String(it.name||""),type:it.type==="milestone"?"milestone":"task",under:it.type==="milestone"&&it.under?String(it.under):"",
     start:toN(it.start)!=null?it.start:"",end:toN(it.end)!=null?it.end:"",revEnd:toN(it.revEnd)!=null?it.revEnd:"",
     status:STATUS[it.status]?it.status:"notstarted",
     edit:it.edit&&it.edit.by?{by:String(it.edit.by),at:+it.edit.at||0,what:String(it.edit.what||"")}:undefined};
@@ -544,7 +544,7 @@ document.getElementById("app").innerHTML=
        '</div></div>'+
      '<div class="table-scroll"><table><colgroup><col class="c-grip"><col class="c-lane"><col class="c-sq"><col class="c-name"><col class="c-type"><col class="c-date"><col class="c-date"><col class="c-wd"><col class="c-rev"><col class="c-st"><col class="c-acts"></colgroup><thead><tr><th><span hidden>Move</span></th><th>Lane</th><th>Project/Squad</th><th>Activity</th><th>Type</th><th>Start</th><th>End</th><th title="Working days">Days</th><th>Revised end</th><th>Status</th><th><span hidden>Actions</span></th></tr></thead><tbody id="tbody"></tbody></table></div>'+
      '<div class="addrow"><button id="btn-add" class="btn primary" type="button">+ Add activity</button><span>New activities start on the next working day after the latest end date.</span></div>'+
-     '<p class="hint">Pick each activity’s <b>Lane</b> and <b>Project/Squad</b> from the dropdowns; to add, rename, reorder or remove the choices, use <a href="#structure">Lanes & Projects/Squads</a> above. On the chart, milestones sit on the top row; activities follow in start-date order, continuing on the same row when the previous one has finished and stepping down a row when they overlap, never jumping back up. Type the working days and the end date is calculated (weekends and holidays skipped). When an activity slips, keep the original End and set a <b>Revised end</b>: the chart shows the extra time as a hollow arrow. Drag the ⠿ handle to move a row up or down. Click any bar to jump to its row.</p>'+
+     '<p class="hint">Pick each activity’s <b>Lane</b> and <b>Project/Squad</b> from the dropdowns; to add, rename, reorder or remove the choices, use <a href="#structure">Lanes & Projects/Squads</a> above. On the chart, milestones sit on the top row, or right under an activity you pick in the milestone’s <b>Show under</b> box; activities follow in start-date order, continuing on the same row when the previous one has finished and stepping down a row when they overlap, never jumping back up. Type the working days and the end date is calculated (weekends and holidays skipped). When an activity slips, keep the original End and set a <b>Revised end</b>: the chart shows the extra time as a hollow arrow. Drag the ⠿ handle to move a row up or down. Click any bar to jump to its row.</p>'+
    '</section>'+
    '<div class="foot"><span id="where"></span><button id="btn-delplan" class="btn ghost" type="button">Delete this timeline</button></div>'+
    '<p class="credit">&copy; 2026 <b>Navarat Veerawongchai</b> All rights reserved.</p>'+
@@ -766,15 +766,23 @@ function buildChart(p,availW,padR,fit){
       }
       geos.push(geo);
     });
+    // a milestone linked to an activity in this strip sits on its own line right under that activity's row;
+    // the others share the top row(s)
+    var byId={}; geos.forEach(function(geo){if(!geo.ms)byId[geo.it.id]=geo});
+    geos.forEach(function(geo){if(geo.ms&&byId[geo.it.under])geo.parent=byId[geo.it.under]});
     var msEnds=[], tEnds=[], floor=0;
-    geos.forEach(function(geo){if(!geo.ms)return;var r=0;while(r<msEnds.length&&msEnds[r]>geo.e0-8)r++;msEnds[r]=geo.e1;geo.row=r});
+    geos.forEach(function(geo){if(!geo.ms||geo.parent)return;var r=0;while(r<msEnds.length&&msEnds[r]>geo.e0-8)r++;msEnds[r]=geo.e1;geo.row=r});
     geos.forEach(function(geo){
       if(geo.ms)return;
       var r=fit?0:floor;while(tEnds[r]!=null&&tEnds[r]>geo.e0+1)r++; // back-to-back activities stay on one row
-      tEnds[r]=geo.e1;floor=r;geo.row=msEnds.length+r;
+      tEnds[r]=geo.e1;floor=r;geo.tr=r;
     });
+    var subs=tEnds.map(function(){return[]}); // per activity row: the milestone lines beneath it
+    geos.forEach(function(geo){if(!geo.parent)return;var sl=subs[geo.parent.tr],k=0;while(k<sl.length&&sl[k]>geo.e0-8)k++;sl[k]=geo.e1;geo.sub=k});
+    var at=msEnds.length, rowOf=tEnds.map(function(_,r){var y=at;at+=1+subs[r].length;return y});
+    geos.forEach(function(geo){if(!geo.ms)geo.row=rowOf[geo.tr];else if(geo.parent)geo.row=rowOf[geo.parent.tr]+1+geo.sub});
     g.geo=geos;
-    g.rows=Math.max(1,msEnds.length+tEnds.length);
+    g.rows=Math.max(1,at);
   })});
   if(!padR){
     var over=0;
@@ -1016,12 +1024,19 @@ function rowHTML(it,H){
    '<td class="name-cell" data-label="Activity"><input id="f-'+id+'-name" data-f="name" value="'+esc(it.name)+'" placeholder="Activity name" aria-label="Activity"'+(it.edit?' style="padding-right:'+Math.min(120,24+it.edit.by.length*6)+'px"':'')+'>'+(it.edit?'<span class="edited-tag" title="'+esc(ed)+'">✎ '+esc(it.edit.by)+'</span>':'')+'</td>'+
    '<td data-label="Type"><select id="f-'+id+'-type" data-f="type" aria-label="Type"><option value="task"'+(ms?"":" selected")+'>Activity</option><option value="milestone"'+(ms?" selected":"")+'>Milestone ▲</option></select></td>'+
    '<td data-label="'+(ms?"Date":"Start")+'"><input id="f-'+id+'-start" data-f="start" type="text" class="date-in" autocomplete="off" placeholder="dd/mm/yyyy" value="'+dmy(it.start)+'" aria-label="'+(ms?"Milestone date":"Start date")+'"></td>'+
-   '<td data-label="End"><input id="f-'+id+'-end" data-f="end" type="text" class="date-in" autocomplete="off" placeholder="dd/mm/yyyy" value="'+(ms?"":dmy(it.end))+'" aria-label="End date"'+(ms?" disabled":"")+'></td>'+
+   (ms?'<td data-label="Show under"><select id="f-'+id+'-under" data-f="under" aria-label="Show this milestone under" title="Where the milestone sits on the chart">'+underOpts(it)+'</select></td>'
+     :'<td data-label="End"><input id="f-'+id+'-end" data-f="end" type="text" class="date-in" autocomplete="off" placeholder="dd/mm/yyyy" value="'+dmy(it.end)+'" aria-label="End date"></td>')+
    '<td data-label="Working days"><div class="dur"><input id="f-'+id+'-wd" data-f="wd" class="num" type="number" min="1" value="'+wd+'" aria-label="Working days"'+(ms?" disabled":"")+'><small>'+(bad?"end < start":"")+'</small></div></td>'+
    '<td data-label="Revised end"'+(ext?' class="slipped" title="'+ext.replace("wd","working days")+' later than planned"':'')+'><div class="dur"><input id="f-'+id+'-revEnd" data-f="revEnd" type="text" class="date-in" autocomplete="off" placeholder="dd/mm/yyyy" value="'+(ms?"":dmy(it.revEnd))+'" aria-label="Revised end date"'+(ms?" disabled":"")+'><span class="ext">'+ext+'</span></div></td>'+
    '<td class="st" data-label="Status" style="--c:'+STATUS[it.status].c+'"><span class="sw"><i></i><select id="f-'+id+'-status" data-f="status" aria-label="Status">'+SKEYS.map(function(k){return '<option value="'+k+'"'+(k===it.status?" selected":"")+'>'+STATUS[k].en+'</option>'}).join("")+'</select></span></td>'+
    '<td class="acts"><button type="button" data-act="dup" title="Duplicate this activity" aria-label="Duplicate">⧉</button><button type="button" class="del" data-act="del" title="Delete" aria-label="Delete">✕</button></td>'+
   '</tr>';
+}
+// a milestone can sit under any activity in the same lane and project/squad
+function underOpts(it){
+  var acts=cur().items.filter(function(x){return !isMs(x)&&x.lane===it.lane&&x.group===it.group}), found=false;
+  var o=acts.map(function(x){var sel=x.id===it.under;if(sel)found=true;return '<option value="'+esc(x.id)+'"'+(sel?" selected":"")+'>↳ '+esc(x.name||"(untitled)")+'</option>'}).join("");
+  return '<option value=""'+(found?"":" selected")+'>▲ Top row</option>'+o;
 }
 function sqStyle(name){var c=sqColor(name);return c?' style="--c:'+c+';--t:'+tint(c,.12)+'"':''}
 function renderTable(){
@@ -1124,8 +1139,12 @@ $("#tbody").addEventListener("input",function(e){
   }else if(f==="end"||f==="revEnd")it[f]=iso||"";
   else if(f==="status"){it.status=el.value;el.closest("td").style.setProperty("--c",STATUS[it.status].c)}
   else if(f==="type"){it.type=el.value;var r=document.createElement("tbody");r.innerHTML=rowHTML(it,H);tr.replaceWith(r.firstChild);touch();return}
-  else{it[f]=el.value;if(f==="lane"||f==="group")renderStructure();if(f==="group"){var td=el.closest("td"),c=sqColor(it.group);if(c){td.style.setProperty("--c",c);td.style.setProperty("--t",tint(c,.12))}else td.removeAttribute("style")}}
+  else{it[f]=el.value;if(f==="lane"||f==="group"){renderStructure();var us=tr.querySelector('[data-f="under"]');if(us)us.innerHTML=underOpts(it)}if(f==="group"){var td=el.closest("td"),c=sqColor(it.group);if(c){td.style.setProperty("--c",c);td.style.setProperty("--t",tint(c,.12))}else td.removeAttribute("style")}}
   refreshRow(tr,it); touch();
+});
+$("#tbody").addEventListener("focusin",function(e){
+  var el=e.target; if(el.dataset.f!=="under")return;
+  var it=cur().items[idx(el.closest("tr").dataset.id)]; if(it)el.innerHTML=underOpts(it);
 });
 /* drag a row by its ⠿ handle to reorder; arrow keys on the handle do the same */
 var drag=null;
@@ -1267,8 +1286,9 @@ $("#btn-delplan").addEventListener("click",function(){
 /* CSV */
 function toCSV(p){
   var H=holSet(p), q=function(v){v=String(v==null?"":v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  var rows=[["Lane","Project/Squad","Activity","Type","Start","End","Revised end","Working days","Status"]];
-  p.items.forEach(function(it){var sp=span(it),ms=isMs(it);rows.push([it.lane,it.group,it.name,ms?"Milestone":"Activity",it.start,ms?"":it.end,ms?"":it.revEnd,sp&&!ms?workdays(sp[0],finish(it),H):"",STATUS[it.status].en])});
+  var rows=[["Lane","Project/Squad","Activity","Type","Start","End","Revised end","Working days","Status","Milestone under"]], nm={};
+  p.items.forEach(function(it){nm[it.id]=it.name});
+  p.items.forEach(function(it){var sp=span(it),ms=isMs(it);rows.push([it.lane,it.group,it.name,ms?"Milestone":"Activity",it.start,ms?"":it.end,ms?"":it.revEnd,sp&&!ms?workdays(sp[0],finish(it),H):"",STATUS[it.status].en,ms&&it.under&&nm[it.under]!=null?nm[it.under]:""])});
   rows.push([]);rows.push(["Holiday","Name"]);
   p.holidays.forEach(function(h){rows.push([h.date,h.name])});
   return "﻿"+rows.map(function(r){return r.map(q).join(",")}).join("\r\n");
@@ -1311,13 +1331,16 @@ $("#csv-in").addEventListener("change",function(){
     var hd=rows[0].map(function(h){return h.trim().toLowerCase()});
     function col(re){for(var i=0;i<hd.length;i++)if(re.test(hd[i]))return i;return -1}
     var ci={lane:col(/lane|swim|phase|stream|team/),group:col(/project|squad|platform|group|sub/),name:col(/activ|task|name/),type:col(/type|kind/),
-      start:col(/start|begin|^date$/),rev:col(/revis|new end|re.?plan/),status:col(/status|state/)};
+      start:col(/start|begin|^date$/),rev:col(/revis|new end|re.?plan/),status:col(/status|state/),under:col(/under|parent/)};
     var endCol=-1;for(var i=0;i<hd.length;i++)if(/end|finish|due/.test(hd[i])&&i!==ci.rev){endCol=i;break}
     ci.end=endCol;
     if(ci.name<0||ci.start<0){toast("Couldn't find Activity and Start columns in the header row");return}
     var items=rows.slice(1).map(function(rw){function g(k){return ci[k]>=0?(rw[ci[k]]||"").trim():""}
       var end=pDate(g("end")), ms=/mile/i.test(g("type"))||(!end&&!!pDate(g("start")));
-      return{lane:g("lane")||"General",group:g("group"),name:g("name"),type:ms?"milestone":"task",start:pDate(g("start")),end:ms?"":end,revEnd:ms?"":pDate(g("rev")),status:pStatus(g("status"))}});
+      return{id:uid(),lane:g("lane")||"General",group:g("group"),name:g("name"),type:ms?"milestone":"task",start:pDate(g("start")),end:ms?"":end,revEnd:ms?"":pDate(g("rev")),status:pStatus(g("status")),under:ms?g("under"):""}});
+    // "Milestone under" holds an activity name: link to that activity in the same lane and project/squad
+    items.forEach(function(it){if(!it.under)return;var n=it.under;it.under="";
+      items.some(function(x){if(x.type==="task"&&x.name.trim()===n&&x.lane===it.lane&&x.group===it.group){it.under=x.id;return true}})});
     addPlan(file.name.replace(/\.csv$/i,""),items,{holidays:hols}); toast("Imported "+plural(items.length,"row"));
   };
   r.readAsText(file);
@@ -1438,8 +1461,10 @@ function packV2(p,who,at){
   p.holidays.forEach(function(h){ds.push(toN(h.date))});
   var base=ds.length?Math.min.apply(null,ds):0;
   function d(v){var n=toN(v);return n==null?"":n-base}
+  var ids=p.items.map(function(it){return it.id});
   var its=p.items.map(function(it){
-    var r=[it.id,L.indexOf(it.lane),it.group?G.indexOf(it.group):"",it.name,it.type==="milestone"?1:0,d(it.start),it.type==="milestone"?"":d(it.end),d(it.revEnd),SKEYS.indexOf(it.status)];
+    var u=it.under?ids.indexOf(it.under):-1;
+    var r=[it.id,L.indexOf(it.lane),it.group?G.indexOf(it.group):"",it.name,it.type==="milestone"?1:0,d(it.start),it.type==="milestone"?"":d(it.end),d(it.revEnd),SKEYS.indexOf(it.status),u>=0?u:""];
     while(r.length>4&&(r[r.length-1]===""||(r.length===9&&r[8]===0)))r.pop(); // trailing blanks and "not started" are the defaults
     return r;
   });
@@ -1454,7 +1479,7 @@ function unpackV2(a){
   G.forEach(function(g,i){if(a[12][i])cols[g]="#"+a[12][i]});
   return {id:a[1],by:a[2],at:a[3]*6e4,plan:{name:a[5],subtitle:a[6],scale:["day","week","month"][a[7]]||"day",showToday:!(a[15]&1),chartFit:a[15]&2?"slide":"full",hideSummary:!!(a[15]&4),viewFrom:d(a[8]),viewTo:d(a[9]),lanes:L,platforms:G,platformColors:cols,
     holidays:a[13].map(function(h){return{date:toS(base+h[0]),name:h[1]}}),
-    items:a[14].map(function(r){return{id:r[0],lane:L[r[1]],group:r[2]===""||r[2]==null?"":G[r[2]],name:r[3],type:r[4]?"milestone":"task",start:d(r[5]),end:d(r[6]),revEnd:d(r[7]),status:SKEYS[r[8]||0]}})}};
+    items:a[14].map(function(r){return{id:r[0],lane:L[r[1]],group:r[2]===""||r[2]==null?"":G[r[2]],name:r[3],type:r[4]?"milestone":"task",start:d(r[5]),end:d(r[6]),revEnd:d(r[7]),status:SKEYS[r[8]||0],under:r[9]!==""&&r[9]!=null&&a[14][r[9]]?a[14][r[9]][0]:""}})}};
 }
 function modal(html){
   var bg=document.createElement("div"); bg.className="modal-bg"; bg.innerHTML='<div class="modal" role="dialog" aria-modal="true">'+html+'</div>';
@@ -1495,8 +1520,8 @@ function shareDialog(){
   });
 }
 // what changed between my copy (a) and the incoming one (b)
-var DIFF_F=[["name","name"],["lane","lane"],["group","project/squad"],["type","type"],["start","start"],["end","end"],["revEnd","revised end"],["status","status"]];
-function showVal(f,v){if(f==="status")return STATUS[v]?STATUS[v].en:v;if(f==="type")return v==="milestone"?"Milestone":"Activity";if(/start|end|revEnd/.test(f))return v?fmtShort(toN(v)):"—";return v||"—"}
+var DIFF_F=[["name","name"],["lane","lane"],["group","project/squad"],["type","type"],["start","start"],["end","end"],["revEnd","revised end"],["status","status"],["under","position"]];
+function showVal(f,v){if(f==="under")return v?"under an activity":"top row";if(f==="status")return STATUS[v]?STATUS[v].en:v;if(f==="type")return v==="milestone"?"Milestone":"Activity";if(/start|end|revEnd/.test(f))return v?fmtShort(toN(v)):"—";return v||"—"}
 function diffPlans(a,b){
   var out=[], A={}, B={};
   a.items.forEach(function(it){A[it.id]=it}); b.items.forEach(function(it){B[it.id]=it});
