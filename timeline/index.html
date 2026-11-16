@@ -779,8 +779,9 @@ function buildChart(p,availW,padR,fit){
     });
     var subs=tEnds.map(function(){return[]}); // per activity row: the milestone lines beneath it
     geos.forEach(function(geo){if(!geo.parent)return;var sl=subs[geo.parent.tr],k=0;while(k<sl.length&&sl[k]>geo.e0-8)k++;sl[k]=geo.e1;geo.sub=k});
-    var at=msEnds.length, rowOf=tEnds.map(function(_,r){var y=at;at+=1+subs[r].length;return y});
-    geos.forEach(function(geo){if(!geo.ms)geo.row=rowOf[geo.tr];else if(geo.parent)geo.row=rowOf[geo.parent.tr]+1+geo.sub});
+    // milestone lines under an activity are shorter than a full row, so the marker hugs its bar
+    var SUB=.75, at=msEnds.length, rowOf=tEnds.map(function(_,r){var y=at;at+=1+SUB*subs[r].length;return y});
+    geos.forEach(function(geo){if(!geo.ms)geo.row=rowOf[geo.tr];else if(geo.parent)geo.row=rowOf[geo.parent.tr]+SUB*(1+geo.sub)});
     g.geo=geos;
     g.rows=Math.max(1,at);
   })});
