@@ -17,10 +17,8 @@ Use the export or backup option in each tool to keep a copy.
 ## Layout
 
 ```
-index.html          hub page (cards are built from tools.json)
+index.html          hub page: header, footer and theme, cards built from tools.json
 tools.json          list of tools: name, icon, path, status, description
-shared/theme.css    shared colors and fonts
-shared/nav.js       shared header and footer
 timeline/           Timeline Planner
 activity-tracker/   Activity Tracker
 individual-kpi/     Develop Team - Individual KPIs
@@ -29,7 +27,7 @@ wbs/                Work Breakdown Structure (coming soon)
 
 ## Adding a tool
 
-1. Create a folder, e.g. `raid/index.html`, and link `../shared/theme.css` and `../shared/nav.js` (with `data-root="../"`).
+1. Create a folder with a single self-contained page, e.g. `raid/index.html`, with the footer credit.
 2. Add an entry to `tools.json` with `"status": "soon"` while it is being built, then `"live"`.
 
 ## Working on changes

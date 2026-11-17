@@ -7,8 +7,37 @@
 <meta name="description" content="Free project management tools: SDLC timeline planner, activity tracker, individual KPIs and more.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="shared/theme.css?v=2">
 <style>
+/* theme: white page, light-blue header band */
+:root{
+  color-scheme:light;
+  --bg:#FFFFFF; --sky-50:#F5F9FF; --sky-100:#EAF3FE; --sky-200:#D3E5FB; --line:#DCE7F5; --line-soft:#EDF3FB;
+  --ink:#0F2340; --muted:#5B6E88; --accent:#1C6FE0; --accent-ink:#FFFFFF;
+  --st-notstarted:#3D8FE6; --st-inprogress:#22A55B; --st-atrisk:#F2BE2C; --st-blocker:#E5484D; --st-done:#A9B3C1;
+  --f-ui:"Plus Jakarta Sans","IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+.wrap{width:100%;max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header + footer (drawn by nav.js) */
+.hub-top{position:sticky;top:0;z-index:20;background:var(--sky-100);border-bottom:1px solid var(--sky-200)}
+.hub-top-in{display:flex;align-items:center;gap:8px 20px;flex-wrap:wrap;padding-block:12px}
+.hub-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--ink);text-decoration:none;margin-right:auto}
+.hub-foot{margin-top:auto;padding:24px 0 28px;text-align:center;font-size:12px;color:var(--muted)}
+.hub-foot b{color:var(--accent);font-weight:600}
+
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--sky-200);background:var(--bg);border-radius:8px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:#155BBE;color:var(--accent-ink)}
+
+/* hub page */
 .hero{padding:48px 0 28px}
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
 .hero h1{margin:6px 0 8px;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.01em}
@@ -42,7 +71,23 @@ a.tool:hover{border-color:var(--accent);box-shadow:0 10px 28px rgba(28,111,224,.
   <div class="privacy"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" style="flex:none;margin-top:1px"><path d="M10 2 4 4.5v5c0 3.7 2.6 6.8 6 8 3.4-1.2 6-4.3 6-8v-5z" fill="none" stroke="#1C6FE0" stroke-width="1.6" stroke-linejoin="round"/></svg>
     <span><b>Your work stays on your device.</b> Everything you create is saved in this browser only and is never sent to a server. Use the export or backup option in each tool to keep a copy.</span></div>
 </main>
-<script src="shared/nav.js?v=2" data-root="./"></script>
+<script>
+/* header + footer; PMHub.tools loads tools.json for the cards */
+(function(){
+  var root="./";
+  var LOGO='<svg width="28" height="28" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7" fill="#1C6FE0"/><path d="M5 7h9l2 1.5-2 1.5H5z" fill="#fff"/><path d="M9 11.5h11l2 1.5-2 1.5H9z" fill="#BFDBFE"/><path d="M7 16h8l2 1.5-2 1.5H7z" fill="#fff"/></svg>';
+
+  var top=document.createElement("header"); top.className="hub-top";
+  top.innerHTML='<div class="wrap hub-top-in"><a class="hub-brand" href="'+root+'">'+LOGO+'<span>PM Hub</span></a></div>';
+  document.body.insertBefore(top,document.body.firstChild);
+
+  var foot=document.createElement("footer"); foot.className="hub-foot";
+  foot.innerHTML='&copy; 2026 <b>Navarat Veerawongchai</b> All rights reserved.';
+  document.body.appendChild(foot);
+
+  window.PMHub={root:root,tools:fetch(root+"tools.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(function(d){return d.tools||[]})};
+})();
+</script>
 <script>
 (function(){
   var ICONS={
