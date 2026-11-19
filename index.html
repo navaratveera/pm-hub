@@ -1,118 +1,1448 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="th">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PM Hub</title>
-<meta name="description" content="Free project management tools: SDLC timeline planner, activity tracker, individual KPIs and more.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Requirement Roadmap</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
 <style>
-/* theme: white page, light-blue header band */
-:root{
-  color-scheme:light;
-  --bg:#FFFFFF; --sky-50:#F5F9FF; --sky-100:#EAF3FE; --sky-200:#D3E5FB; --line:#DCE7F5; --line-soft:#EDF3FB;
-  --ink:#0F2340; --muted:#5B6E88; --accent:#1C6FE0; --accent-ink:#FFFFFF;
-  --st-notstarted:#3D8FE6; --st-inprogress:#22A55B; --st-atrisk:#F2BE2C; --st-blocker:#E5484D; --st-done:#A9B3C1;
-  --f-ui:"Plus Jakarta Sans","IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --r:10px;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root {
+  --bg: #f7f8fa;
+  --bg-gradient: linear-gradient(180deg, #f7f8fa 0%, #f0f2f6 100%);
+  --card-bg: #ffffff;
+  --primary: #4a6fa5;
+  --primary-dark: #3a5a8a;
+  --primary-light: #e8eef5;
+  --text: #2d3748;
+  --text-secondary: #718096;
+  --text-tertiary: #a0aec0;
+  --border: #e2e6ec;
+  --border-light: #eef1f5;
+  --green: #5b9a6b;
+  --green-light: #e0eee4;
+  --orange: #c8893e;
+  --orange-light: #f5ebda;
+  --red: #b56060;
+  --red-light: #f0e0e0;
+  --purple: #7a6ca8;
+  --purple-light: #ece8f5;
+  --cyan: #5a9aa8;
+  --cyan-light: #dfecef;
+  --shadow: 0 1px 2px rgba(45,55,72,0.04);
+  --shadow-md: 0 2px 8px rgba(45,55,72,0.06);
+  --shadow-lg: 0 4px 16px rgba(45,55,72,0.08);
+  --shadow-xl: 0 8px 24px rgba(45,55,72,0.10);
+  --radius: 12px;
+  --radius-sm: 8px;
 }
-*{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
-[hidden]{display:none!important}
-a{color:var(--accent)}
-.wrap{width:100%;max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-/* header + footer (drawn by nav.js) */
-.hub-top{position:sticky;top:0;z-index:20;background:var(--sky-100);border-bottom:1px solid var(--sky-200)}
-.hub-top-in{display:flex;align-items:center;gap:8px 20px;flex-wrap:wrap;padding-block:12px}
-.hub-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--ink);text-decoration:none;margin-right:auto}
-.hub-foot{margin-top:auto;padding:24px 0 28px;text-align:center;font-size:12px;color:var(--muted)}
-.hub-foot b{color:var(--accent);font-weight:600}
+/* ===== Upload Area ===== */
+.upload-container {
+  max-width: 640px;
+  margin: 80px auto;
+  padding: 40px;
+  text-align: center;
+}
+.upload-box {
+  background: var(--card-bg);
+  border: 2px dashed #c4ccd6;
+  border-radius: 20px;
+  padding: 64px 40px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+.upload-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--cyan));
+  border-radius: 20px 20px 0 0;
+}
+.upload-box:hover, .upload-box.dragover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+.upload-box h2 { font-size: 1.5rem; margin-bottom: 8px; font-weight: 700; letter-spacing: -0.02em; }
+.upload-box p { color: var(--text-secondary); margin-bottom: 28px; font-size: 0.9375rem; }
+.upload-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 12px 36px;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(74, 111, 165, 0.2);
+}
+.upload-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(74, 111, 165, 0.3); }
+.upload-icon { font-size: 56px; margin-bottom: 16px; }
+.format-info {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  border: 1px solid #d4dde8;
+}
+.format-info b { color: var(--primary-dark); font-weight: 600; }
 
-.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--sky-200);background:var(--bg);border-radius:8px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;text-decoration:none}
-.btn:hover{border-color:var(--accent);color:var(--accent)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{background:#155BBE;color:var(--accent-ink)}
+/* ===== Dashboard ===== */
+.dashboard { display: none; }
+.dashboard.active { display: block; }
 
-/* hub page */
-.hero{padding:48px 0 28px}
-.eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
-.hero h1{margin:6px 0 8px;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.01em}
-.hero p{margin:0;max-width:62ch;color:var(--muted);font-size:15px}
-#tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding-bottom:32px}
-@media(max-width:860px){#tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:560px){#tools{grid-template-columns:minmax(0,1fr)}}
-#tools section{display:flex;flex-direction:column;min-width:0}
-.group-title{margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
-.tools{display:flex;flex-direction:column;gap:16px;flex:1}
-.tools .tool{flex:1}
-.tool{display:flex;flex-direction:column;gap:10px;border:1px solid var(--sky-200);border-radius:14px;padding:20px;background:var(--bg);text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
-a.tool:hover{border-color:var(--accent);box-shadow:0 10px 28px rgba(28,111,224,.14);transform:translateY(-2px)}
-.tool-ic{width:44px;height:44px;border-radius:11px;background:var(--sky-100);display:grid;place-items:center;color:var(--accent)}
-.tool h2{margin:0;font-size:17px}
-.tool p{margin:0;color:var(--muted);font-size:13px;flex:1}
-.tool .go{font-size:13px;font-weight:600;color:var(--accent)}
-.tool.soon{background:var(--sky-50);cursor:default;user-select:none;overflow:hidden}
-.tool.soon>*{filter:blur(3px);opacity:.75}
-.privacy{display:flex;gap:10px;align-items:flex-start;background:var(--sky-50);border:1px solid var(--sky-200);border-radius:var(--r);padding:12px 16px;font-size:13px;color:var(--muted);margin-bottom:32px}
-.privacy b{color:var(--ink)}
+.header {
+  background: var(--card-bg);
+  padding: 14px 28px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--border-light);
+}
+.header h1 { font-size: 1.25rem; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+.header-actions { display: flex; gap: 12px; align-items: center; }
+.file-name {
+  color: var(--text-secondary); font-size: 0.8125rem;
+  background: var(--border-light);
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+.btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-outline:hover { background: var(--border-light); color: var(--text); border-color: #c4ccd6; }
+
+/* ===== Summary Cards ===== */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  padding: 24px 28px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  opacity: 0.06;
+  transform: translate(30px, -30px);
+}
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.card-label { font-size: 0.6875rem; color: var(--text-tertiary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.card-value { font-size: 1.875rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; line-height: 1.1; }
+.card-sub { font-size: 0.6875rem; color: var(--text-tertiary); margin-top: 6px; }
+.card.accent-blue { border-top: 3px solid var(--primary); }
+.card.accent-blue::after { background: var(--primary); }
+.card.accent-green { border-top: 3px solid var(--green); }
+.card.accent-green::after { background: var(--green); }
+.card.accent-orange { border-top: 3px solid var(--orange); }
+.card.accent-orange::after { background: var(--orange); }
+.card.accent-purple { border-top: 3px solid var(--purple); }
+.card.accent-purple::after { background: var(--purple); }
+.card.accent-red { border-top: 3px solid var(--red); }
+.card.accent-red::after { background: var(--red); }
+.card.accent-cyan { border-top: 3px solid var(--cyan); }
+.card.accent-cyan::after { background: var(--cyan); }
+
+/* ===== Charts ===== */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 0 28px 24px;
+}
+@media (max-width: 1100px) {
+  .charts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .charts-grid { grid-template-columns: 1fr; }
+}
+.chart-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.chart-card:hover { box-shadow: var(--shadow-md); }
+.chart-card h3 { font-size: 0.9375rem; margin-bottom: 18px; color: var(--text); font-weight: 700; letter-spacing: -0.01em; }
+.chart-wrapper { position: relative; height: 300px; }
+
+/* ===== Business Roadmap ===== */
+.roadmap-section { padding: 0 28px 24px; }
+.roadmap-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.roadmap-card h3 {
+  font-size: 0.9375rem; margin-bottom: 18px; font-weight: 700; letter-spacing: -0.01em;
+  display: flex; align-items: center; gap: 8px;
+}
+.roadmap-card h3 .rm-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; font-size: 13px; font-weight: 700;
+}
+.rm-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.rm-header h3 { margin-bottom: 0; }
+.rm-platform-sel {
+  display: flex; align-items: center; gap: 8px;
+}
+.rm-platform-sel label {
+  font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap;
+}
+.rm-platform-sel select {
+  padding: 7px 28px 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: var(--primary-light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a6fa5' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.rm-platform-sel select:hover { border-color: var(--primary); background-color: #dce5f0; }
+.rm-platform-sel select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+.rm-toggle-btn {
+  padding: 7px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.rm-toggle-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.rm-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.rm-toggle-btn svg { width: 14px; height: 14px; }
+.rm-json-view { display: none; }
+.rm-json-view.active { display: block; }
+.rm-json-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.rm-json-info { font-size: 0.75rem; color: var(--text-tertiary); }
+.rm-json-copy {
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 0.75rem; font-weight: 600; font-family: inherit;
+  color: var(--text-secondary); background: var(--bg); cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 5px;
+}
+.rm-json-copy:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.rm-json-copy svg { width: 13px; height: 13px; }
+.rm-json-box {
+  background: #ffffff; border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px;
+  max-height: 520px; overflow: auto;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+  font-size: 0.8125rem; line-height: 1.6;
+  white-space: pre;
+}
+.rm-json-box::-webkit-scrollbar { width: 8px; }
+.rm-json-box::-webkit-scrollbar-track { background: #f7f8fa; }
+.rm-json-box::-webkit-scrollbar-thumb { background: #c4ccd6; border-radius: 4px; }
+.rm-json-line { white-space: pre; }
+.rm-json-key { color: #3a5a8a; }
+.rm-json-str { color: #5b9a6b; }
+.rm-json-num { color: #c8893e; }
+.rm-json-bool { color: #b56060; }
+.rm-json-null { color: #a0aec0; }
+.rm-json-punc { color: #718096; }
+.rm-grid-head, .rm-group { display: flex; gap: 14px; align-items: stretch; }
+.rm-gname-h { flex: none; width: 180px; }
+.rm-cols { flex: 1; }
+.rm-qrow, .rm-mrow { display: flex; width: 100%; }
+.rm-q {
+  flex: 1; text-align: center; font-weight: 600; color: var(--text-secondary);
+  padding: 5px 0; font-size: 12.5px;
+  border-left: 1px solid var(--border); box-sizing: border-box;
+}
+.rm-m {
+  flex: 1; text-align: center; color: var(--text-tertiary);
+  padding: 3px 0; font-size: 9.5px;
+  border-left: 1px solid var(--border); box-sizing: border-box;
+}
+.rm-mrow { border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.rm-group { margin-bottom: 12px; }
+.rm-gname {
+  flex: none; width: 180px; display: flex; align-items: center;
+  font-weight: 600; font-size: 14px;
+  background: var(--primary-light); color: var(--primary-dark);
+  border-radius: 10px; padding: 8px 12px;
+}
+.rm-track {
+  flex: 1; display: block; position: relative;
+  background: repeating-linear-gradient(90deg, transparent, transparent calc(8.3333% - 1px), var(--border) 8.3333%);
+  border-radius: 10px; padding: 8px 0;
+}
+.rm-frow { position: relative; margin-bottom: 8px; }
+.rm-frow:last-child { margin-bottom: 0; }
+.rm-frow.same-row { position: relative; margin-bottom: 32px; }
+.rm-frow.same-row .rm-feat { position: absolute; top: 0; box-sizing: border-box; }
+.rm-feat {
+  box-sizing: border-box;
+  background: #f0f4f8;
+  border: 1px solid #d1dae3;
+  border-left: 3px solid var(--primary);
+  border-radius: 6px; padding: 8px 12px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.rm-feat:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.rm-feat-name { font-weight: 600; font-size: 12.5px; line-height: 1.25; color: var(--text); }
+.rm-feat-desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.rm-bul { margin: 3px 0 0; padding-left: 15px; }
+.rm-bul li { font-size: 11px; color: var(--text-secondary); line-height: 1.35; margin: 1px 0; }
+
+/* ===== Table ===== */
+.table-section { padding: 0 28px 28px; }
+.table-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.table-card h3 { font-size: 0.9375rem; margin-bottom: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.search-box {
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  flex: 1;
+  min-width: 200px;
+  background: var(--bg);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.search-box:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-light); }
+
+/* ===== Multi-Select Dropdown ===== */
+.ms-container { position: relative; min-width: 170px; }
+.ms-btn {
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  background: var(--bg);
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.ms-btn:hover { border-color: #c4ccd6; background: white; }
+.ms-btn.open { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-light); color: var(--text); }
+.ms-btn-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-btn-count {
+  background: var(--primary);
+  color: white;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.ms-btn-arrow { font-size: 0.6875rem; color: var(--text-tertiary); flex-shrink: 0; transition: transform 0.2s; }
+.ms-btn.open .ms-btn-arrow { transform: rotate(180deg); }
+.ms-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-xl);
+  z-index: 50;
+  max-height: 320px;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ms-panel.open { display: flex; }
+.ms-actions {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.ms-action-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.ms-action-btn:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+.ms-list { overflow-y: auto; flex: 1; }
+.ms-list::-webkit-scrollbar { width: 6px; }
+.ms-list::-webkit-scrollbar-thumb { background: #c4ccd6; border-radius: 3px; }
+.ms-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  transition: background 0.1s;
+  color: var(--text);
+}
+.ms-item:hover { background: var(--border-light); }
+.ms-item input[type="checkbox"] { margin: 0; cursor: pointer; accent-color: var(--primary); width: 15px; height: 15px; }
+.ms-item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.ms-item-count {
+  color: var(--text-tertiary); font-size: 0.6875rem; margin-left: auto; flex-shrink: 0;
+  background: var(--border-light); padding: 2px 7px; border-radius: 6px; font-weight: 600;
+}
+.table-wrapper {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+thead { background: var(--bg); position: sticky; top: 0; z-index: 10; }
+th {
+  padding: 11px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+tr:hover { background: var(--bg); }
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-blue { background: var(--primary-light); color: var(--primary); }
+.badge-orange { background: var(--orange-light); color: var(--orange); }
+.badge-red { background: var(--red-light); color: var(--red); }
+.badge-purple { background: var(--purple-light); color: var(--purple); }
+.badge-gray { background: var(--border-light); color: var(--text-secondary); }
+
+.table-footer {
+  margin-top: 14px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ===== Loading ===== */
+.loading-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+}
+.loading-overlay.active { display: flex; }
+.spinner {
+  width: 44px; height: 44px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-msg {
+  color: var(--red);
+  background: var(--red-light);
+  padding: 12px 18px;
+  border-radius: 10px;
+  margin: 16px 28px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+}
 </style>
 </head>
 <body>
-<main class="wrap">
-  <section class="hero">
-    <h1>Project Management Hub</h1>
-    <p>A toolkit to help you work better</p>
-  </section>
-  <div id="tools"></div>
-  <div class="privacy"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" style="flex:none;margin-top:1px"><path d="M10 2 4 4.5v5c0 3.7 2.6 6.8 6 8 3.4-1.2 6-4.3 6-8v-5z" fill="none" stroke="#1C6FE0" stroke-width="1.6" stroke-linejoin="round"/></svg>
-    <span><b>Your work stays on your device.</b> Everything you create is saved in this browser only and is never sent to a server. Use the export or backup option in each tool to keep a copy.</span></div>
-</main>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<!-- Upload View -->
+<div class="upload-container" id="uploadView">
+  <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <h2>อัปโหลดไฟล์ Excel</h2>
+    <p>ลากไฟล์ .xlsx มาวาง หรือคลิกเพื่อเลือกไฟล์</p>
+    <div class="upload-btn">เลือกไฟล์</div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+  </div>
+  <div class="format-info">
+    <b>รูปแบบไฟล์ที่รองรับ:</b> ไฟล์ Excel (.xlsx) ที่มี sheet "All" ซึ่งมีข้อมูลคอลัมน์เช่น PID, Platform, Product group, Project type, Feature name, Status, JO status, Dev start month, Tech go-live month, Public launch month, Overall sizing, Proposed Proceed/Drop และมี header ที่ row 6 ข้อมูลเริ่มต้นที่ row 7
+  </div>
+</div>
+
+<!-- Dashboard View -->
+<div class="dashboard" id="dashboardView">
+  <div class="header">
+    <h1>📊 Requirement Roadmap</h1>
+    <div class="header-actions">
+      <span class="file-name" id="fileName"></span>
+      <button class="btn btn-outline" onclick="resetUpload()">อัปโหลดไฟล์ใหม่</button>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg" style="display:none"></div>
+
+  <!-- Summary Cards -->
+  <div class="cards-grid" id="cardsGrid"></div>
+
+  <!-- Charts -->
+  <div class="charts-grid" id="chartsGrid">
+    <div class="chart-card">
+      <h3>สถานะโครงการ (Status Distribution)</h3>
+      <div class="chart-wrapper"><canvas id="statusChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>แพลตฟอร์ม (Platform Distribution)</h3>
+      <div class="chart-wrapper"><canvas id="platformChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>ประเภทโครงการ (Project Type)</h3>
+      <div class="chart-wrapper"><canvas id="projectTypeChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>ขนาดโครงการ (Overall Sizing)</h3>
+      <div class="chart-wrapper"><canvas id="sizingChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Business Roadmap -->
+  <div class="roadmap-section">
+    <div class="roadmap-card">
+      <div class="rm-header">
+        <h3><span class="rm-icon">1</span> Business Roadmap</h3>
+        <div class="rm-platform-sel">
+          <label>Platform:</label>
+          <select id="rmPlatform" onchange="renderRoadmap(this.value)">
+            <option value="all">All Platforms</option>
+          </select>
+          <button class="rm-toggle-btn" id="rmToggleJson" onclick="toggleRoadmapJson()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            JSON
+          </button>
+        </div>
+      </div>
+      <div id="rmTableView">
+        <div class="rm-grid-head">
+          <div class="rm-gname-h"></div>
+          <div class="rm-cols">
+            <div class="rm-qrow">
+              <div class="rm-q">Q3</div>
+              <div class="rm-q">Q4</div>
+              <div class="rm-q">Q1</div>
+              <div class="rm-q">Q2</div>
+            </div>
+            <div class="rm-mrow">
+              <div class="rm-m">Jul</div><div class="rm-m">Aug</div><div class="rm-m">Sep</div>
+              <div class="rm-m">Oct</div><div class="rm-m">Nov</div><div class="rm-m">Dec</div>
+              <div class="rm-m">Jan</div><div class="rm-m">Feb</div><div class="rm-m">Mar</div>
+              <div class="rm-m">Apr</div><div class="rm-m">May</div><div class="rm-m">Jun</div>
+            </div>
+          </div>
+        </div>
+        <div id="rmBody"></div>
+      </div>
+      <div class="rm-json-view" id="rmJsonView">
+        <div class="rm-json-toolbar">
+          <span class="rm-json-info" id="rmJsonInfo"></span>
+          <button class="rm-json-copy" onclick="copyRoadmapJson()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <div class="rm-json-box" id="rmJsonBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-section">
+    <div class="table-card">
+      <h3>รายการโครงการ</h3>
+      <div class="filters">
+        <input type="text" class="search-box" id="searchBox" placeholder="ค้นหา... (PID, Feature name, Platform)">
+        <div class="ms-container" id="msStatus"></div>
+        <div class="ms-container" id="msPlatform"></div>
+        <div class="ms-container" id="msType"></div>
+        <div class="ms-container" id="msSizing"></div>
+      </div>
+      <div class="table-wrapper">
+        <table id="dataTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="tableInfo"></span>
+        <span>
+          <button class="btn btn-outline" onclick="exportCSV()">Export CSV</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-/* header + footer; PMHub.tools loads tools.json for the cards */
-(function(){
-  var root="./";
-  var LOGO='<svg width="28" height="28" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7" fill="#1C6FE0"/><path d="M5 7h9l2 1.5-2 1.5H5z" fill="#fff"/><path d="M9 11.5h11l2 1.5-2 1.5H9z" fill="#BFDBFE"/><path d="M7 16h8l2 1.5-2 1.5H7z" fill="#fff"/></svg>';
+let allData = [];
+let filteredData = [];
+let charts = {};
 
-  var top=document.createElement("header"); top.className="hub-top";
-  top.innerHTML='<div class="wrap hub-top-in"><a class="hub-brand" href="'+root+'">'+LOGO+'<span>PM Hub</span></a></div>';
-  document.body.insertBefore(top,document.body.firstChild);
+// ===== File Upload Handling =====
+const uploadBox = document.getElementById('uploadBox');
+const fileInput = document.getElementById('fileInput');
 
-  var foot=document.createElement("footer"); foot.className="hub-foot";
-  foot.innerHTML='&copy; 2026 <b>Navarat Veerawongchai</b> All rights reserved.';
-  document.body.appendChild(foot);
+uploadBox.addEventListener('dragover', (e) => { e.preventDefault(); uploadBox.classList.add('dragover'); });
+uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('dragover'));
+uploadBox.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadBox.classList.remove('dragover');
+  if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) handleFile(e.target.files[0]);
+});
 
-  window.PMHub={root:root,tools:fetch(root+"tools.json",{cache:"no-cache"}).then(function(r){return r.json()}).then(function(d){return d.tools||[]})};
-})();
-</script>
-<script>
-(function(){
-  var ICONS={
-    timeline:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="9" height="3.5" rx="1.2" fill="currentColor"/><rect x="8" y="10.25" width="11" height="3.5" rx="1.2" fill="currentColor" opacity=".55"/><rect x="5" y="15.5" width="8" height="3.5" rx="1.2" fill="currentColor"/></svg>',
-    tracker:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 5.5 8 8 5M4 12.5 5.5 14 8 11M4 18.5 5.5 20 8 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 6.5H20M11.5 12.5H20M11.5 18.5H20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-    kpi:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="13" width="4" height="7" rx="1.2" fill="currentColor"/><rect x="10" y="9" width="4" height="11" rx="1.2" fill="currentColor"/><rect x="16" y="4" width="4" height="16" rx="1.2" fill="currentColor"/></svg>',
-    risk:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1.2" fill="currentColor" opacity=".35"/><rect x="9.5" y="3" width="5" height="5" rx="1.2" fill="currentColor" opacity=".65"/><rect x="16" y="3" width="5" height="5" rx="1.2" fill="currentColor"/><rect x="3" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" opacity=".2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" opacity=".35"/><rect x="16" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" opacity=".65"/><rect x="3" y="16" width="5" height="5" rx="1.2" fill="currentColor" opacity=".12"/><rect x="9.5" y="16" width="5" height="5" rx="1.2" fill="currentColor" opacity=".2"/><rect x="16" y="16" width="5" height="5" rx="1.2" fill="currentColor" opacity=".35"/></svg>',
-    wbs:'<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="9" y="3" width="6" height="4.5" rx="1"/><rect x="2.5" y="16.5" width="6" height="4.5" rx="1"/><rect x="15.5" y="16.5" width="6" height="4.5" rx="1"/><path d="M12 7.5v4.5M5.5 16.5V12h13v4.5"/></svg>'
-  };
-  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-  PMHub.tools.then(function(tools){
-    function card(t){
-      var live=t.status==="live", ic=ICONS[t.icon]||ICONS.timeline;
-      var body='<div class="tool-ic">'+ic+'</div><h2>'+esc(t.name)+'</h2><p>'+esc(t.description)+'</p>';
-      // tools still being built show as a blurred preview: the group title says what is coming
-      return live?'<a class="tool" href="'+esc(t.path)+'">'+body+'<span class="go">Open tool →</span></a>':'<div class="tool soon" aria-hidden="true">'+body+'</div>';
+function showLoading(show) {
+  document.getElementById('loadingOverlay').classList.toggle('active', show);
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function handleFile(file) {
+  showLoading(true);
+  document.getElementById('errorMsg').style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      if (!workbook.SheetNames.includes('All')) {
+        throw new Error('ไม่พบ sheet "All" ในไฟล์ — กรุณาตรวจสอบรูปแบบไฟล์');
+      }
+
+      const worksheet = workbook.Sheets['All'];
+      // Header at row 6, data from row 7
+      const jsonData = parseAllSheet(worksheet);
+
+      if (jsonData.length === 0) {
+        throw new Error('ไม่พบข้อมูลใน sheet "All"');
+      }
+
+      allData = jsonData;
+      document.getElementById('fileName').textContent = '📄 ' + file.name + ' (' + jsonData.length + ' รายการ)';
+      showDashboard();
+    } catch (err) {
+      showError('เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+      showLoading(false);
     }
-    // groups appear in the order tools.json first mentions them
-    var groups=[];
-    tools.forEach(function(t){var g=t.group||"Tools";if(groups.indexOf(g)<0)groups.push(g)});
-    document.getElementById("tools").innerHTML=groups.map(function(g){
-      return '<section aria-label="'+esc(g)+'"><h2 class="group-title">'+esc(g)+'</h2><div class="tools">'+tools.filter(function(t){return (t.group||"Tools")===g}).map(card).join("")+'</div></section>';
-    }).join("");
+  };
+  reader.onerror = () => { showLoading(false); showError('ไม่สามารถอ่านไฟล์ได้'); };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseAllSheet(ws) {
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const headers = [];
+  // Row 6 = headers
+  for (let c = range.s.c; c <= Math.min(range.e.c, 121); c++) {
+    const addr = XLSX.utils.encode_cell({ r: 5, c });
+    const cell = ws[addr];
+    let h = cell ? String(cell.v).replace(/\n/g, ' ').trim() : 'col_' + c;
+    headers.push(h);
+  }
+
+  const data = [];
+  // Data from row 7 onwards
+  for (let r = 6; r <= range.e.r; r++) {
+    const pidAddr = XLSX.utils.encode_cell({ r, c: 0 });
+    if (!ws[pidAddr] || ws[pidAddr].v === undefined || ws[pidAddr].v === null) continue;
+
+    const row = {};
+    for (let c = 0; c < headers.length; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      const cell = ws[addr];
+      row[headers[c]] = cell ? cell.v : null;
+    }
+    data.push(row);
+  }
+  return data;
+}
+
+// ===== Dashboard Rendering =====
+function showDashboard() {
+  document.getElementById('uploadView').style.display = 'none';
+  document.getElementById('dashboardView').classList.add('active');
+  renderCards();
+  renderCharts();
+  renderTable();
+  updatePlatformSelector();
+  renderRoadmap('all');
+}
+
+function resetUpload() {
+  document.getElementById('uploadView').style.display = 'block';
+  document.getElementById('dashboardView').classList.remove('active');
+  document.getElementById('fileInput').value = '';
+  allData = [];
+  Object.values(charts).forEach(c => c && c.destroy());
+  charts = {};
+}
+
+// Helper
+function countBy(field) {
+  const counts = {};
+  allData.forEach(row => {
+    const v = row[field];
+    if (v !== null && v !== undefined && String(v).trim() !== '') {
+      counts[v] = (counts[v] || 0) + 1;
+    }
   });
-})();
+  return counts;
+}
+
+function renderCards() {
+  const total = allData.length;
+  const statuses = countBy('Status');
+  const activeCount = Object.entries(statuses)
+    .filter(([k]) => !k.startsWith('0.'))
+    .reduce((sum, [, v]) => sum + v, 0);
+  const cancelledCount = statuses['0. Cancel'] || 0;
+  const holdCount = statuses['0. Hold'] || 0;
+  const goLiveCount = (statuses['5. Tech go-live'] || 0) + (statuses['6. Public launch'] || 0);
+  const decisions = countBy('Propsoed Proceed/Drop');
+  const proceedCount = decisions['Proceed'] || 0;
+  const dropCount = decisions['Propose drop'] || 0;
+
+  const cards = [
+    { label: 'ทั้งหมด', value: total, sub: 'โครงการทั้งหมด', cls: 'accent-blue' },
+    { label: 'Active', value: activeCount, sub: 'โครงการที่ดำเนินการอยู่', cls: 'accent-green' },
+    { label: 'Go-live', value: goLiveCount, sub: 'Tech go-live + Public launch', cls: 'accent-purple' },
+    { label: 'Hold', value: holdCount, sub: 'โครงการที่ถูก Hold', cls: 'accent-orange' },
+    { label: 'Cancel', value: cancelledCount, sub: 'โครงการที่ยกเลิก', cls: 'accent-red' },
+    { label: 'Proceed', value: proceedCount, sub: 'Proposed Proceed', cls: 'accent-green' },
+    { label: 'Propose Drop', value: dropCount, sub: 'Proposed Drop', cls: 'accent-red' },
+  ];
+
+  document.getElementById('cardsGrid').innerHTML = cards.map(c => `
+    <div class="card ${c.cls}">
+      <div class="card-label">${c.label}</div>
+      <div class="card-value">${c.value}</div>
+      <div class="card-sub">${c.sub}</div>
+    </div>
+  `).join('');
+}
+
+const CHART_COLORS = ['#6b8cae','#8db5a0','#d4a76a','#9b8ec4','#cf8b8b','#7eb0c2','#d9c47a','#c49ab2','#a8b878','#a8b0bc','#7d9bc4','#d4b06a'];
+
+function makeChart(id, labels, data, type = 'doughnut') {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: type,
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: CHART_COLORS.slice(0, labels.length),
+        borderWidth: 2,
+        borderColor: '#fff',
+        borderRadius: type === 'bar' ? 6 : 0,
+        hoverOffset: type === 'doughnut' ? 8 : 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: type === 'bar' ? 'top' : 'right',
+          labels: {
+            font: { size: 11, family: 'Inter', weight: '500' },
+            boxWidth: 10,
+            boxHeight: 10,
+            usePointStyle: true,
+            padding: 12,
+            color: '#718096'
+          }
+        },
+        tooltip: {
+          backgroundColor: '#2d3748',
+          titleFont: { size: 12, family: 'Inter', weight: '600' },
+          bodyFont: { size: 12, family: 'Inter' },
+          padding: 10,
+          cornerRadius: 6,
+          displayColors: true,
+          boxPadding: 4,
+        }
+      },
+      ...(type === 'bar' && {
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0, font: { size: 11, family: 'Inter' }, color: '#a0aec0' },
+            grid: { color: '#eef1f5' },
+            border: { display: false }
+          },
+          x: {
+            ticks: { font: { size: 11, family: 'Inter' }, color: '#a0aec0' },
+            grid: { display: false },
+            border: { color: '#e2e6ec' }
+          }
+        }
+      }),
+      ...(type === 'doughnut' && {
+        cutout: '65%',
+      })
+    }
+  });
+}
+
+function renderCharts() {
+  // Status
+  const statusData = countBy('Status');
+  const statusLabels = Object.keys(statusData).sort();
+  charts.status = makeChart('statusChart', statusLabels, statusLabels.map(k => statusData[k]));
+
+  // Platform
+  const platformData = countBy('Platform');
+  const platformLabels = Object.keys(platformData).sort();
+  charts.platform = makeChart('platformChart', platformLabels, platformLabels.map(k => platformData[k]), 'bar');
+
+  // Project Type
+  const typeData = countBy('Project type');
+  const typeLabels = Object.keys(typeData).sort();
+  charts.projectType = makeChart('projectTypeChart', typeLabels, typeLabels.map(k => typeData[k]));
+
+  // Sizing
+  const sizingData = countBy('Overall sizing (by PO)');
+  const sizingOrder = ['XS','S','M','L','XL'];
+  const sizingLabels = sizingOrder.filter(k => sizingData[k]);
+  charts.sizing = makeChart('sizingChart', sizingLabels, sizingLabels.map(k => sizingData[k]), 'bar');
+
+}
+
+// ===== Table =====
+const TABLE_COLUMNS = [
+  { key: '#', label: 'PID', width: 140 },
+  { key: 'Platform', label: 'Platform', width: 180 },
+  { key: 'Project type', label: 'Project Type', width: 120 },
+  { key: 'Feature name', label: 'Feature Name', width: 250 },
+  { key: 'Status', label: 'Status', width: 120, badge: true },
+  { key: 'JO status', label: 'JO Status', width: 100 },
+  { key: 'Dev start  month', label: 'Dev Start', width: 80 },
+  { key: 'Tech go-live  month', label: 'Tech Go-live', width: 90 },
+  { key: 'Public  launch  month', label: 'Public Launch', width: 90 },
+  { key: 'Overall sizing (by PO)', label: 'Sizing', width: 70 },
+  { key: 'Propsoed Proceed/Drop', label: 'Decision', width: 100, badge: true },
+];
+
+function getStatusBadge(value) {
+  if (!value) return '';
+  const v = String(value);
+  if (v.startsWith('6.') || v.startsWith('5.')) return '<span class="badge badge-green">' + v + '</span>';
+  if (v.startsWith('4.') || v.startsWith('3.')) return '<span class="badge badge-blue">' + v + '</span>';
+  if (v.startsWith('2.') || v.startsWith('1.')) return '<span class="badge badge-orange">' + v + '</span>';
+  if (v.startsWith('0. Hold')) return '<span class="badge badge-purple">' + v + '</span>';
+  if (v.startsWith('0. Cancel')) return '<span class="badge badge-red">' + v + '</span>';
+  return '<span class="badge badge-gray">' + v + '</span>';
+}
+
+function getDecisionBadge(value) {
+  if (!value) return '';
+  const v = String(value);
+  if (v === 'Proceed') return '<span class="badge badge-green">Proceed</span>';
+  if (v === 'Propose drop') return '<span class="badge badge-red">Propose drop</span>';
+  return '<span class="badge badge-gray">' + v + '</span>';
+}
+
+// ===== Multi-Select Component =====
+const msState = {}; // { id: { field, label, options: [{value, count}], selected: Set } }
+
+function createMultiSelect(containerId, label, field) {
+  const counts = countBy(field);
+  const options = Object.keys(counts).sort();
+
+  msState[containerId] = {
+    field,
+    label,
+    options,
+    selected: new Set(),
+  };
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = `
+    <button class="ms-btn" type="button">
+      <span class="ms-btn-label">${label}</span>
+      <span class="ms-btn-count" style="display:none"></span>
+      <span class="ms-btn-arrow">▼</span>
+    </button>
+    <div class="ms-panel">
+      <div class="ms-actions">
+        <button class="ms-action-btn" data-action="all">เลือกทั้งหมด</button>
+        <button class="ms-action-btn" data-action="clear">ล้าง</button>
+      </div>
+      <div class="ms-list">
+        ${options.map(opt => `
+          <label class="ms-item">
+            <input type="checkbox" value="${opt.replace(/"/g, '&quot;')}">
+            <span class="ms-item-label">${opt}</span>
+            <span class="ms-item-count">${counts[opt]}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  const btn = container.querySelector('.ms-btn');
+  const panel = container.querySelector('.ms-panel');
+  const countBadge = container.querySelector('.ms-btn-count');
+  const btnLabel = container.querySelector('.ms-btn-label');
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = panel.classList.contains('open');
+    // Close all other panels
+    document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.ms-btn.open').forEach(b => b.classList.remove('open'));
+    if (!isOpen) {
+      panel.classList.add('open');
+      btn.classList.add('open');
+    }
+  });
+
+  // Action buttons
+  container.querySelectorAll('.ms-action-btn').forEach(actionBtn => {
+    actionBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = actionBtn.dataset.action;
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+      if (action === 'all') {
+        checkboxes.forEach(cb => cb.checked = true);
+      } else {
+        checkboxes.forEach(cb => cb.checked = false);
+      }
+      updateMultiSelectState(containerId);
+      updateTable();
+    });
+  });
+
+  // Checkbox change
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      updateMultiSelectState(containerId);
+      updateTable();
+    });
+  });
+
+  function updateMultiSelectState(id) {
+    const state = msState[id];
+    const cont = document.getElementById(id);
+    const checkboxes = cont.querySelectorAll('input[type="checkbox"]:checked');
+    state.selected = new Set();
+    checkboxes.forEach(cb => state.selected.add(cb.value));
+    const count = state.selected.size;
+    const badge = cont.querySelector('.ms-btn-count');
+    const labelEl = cont.querySelector('.ms-btn-label');
+    if (count > 0) {
+      badge.textContent = count;
+      badge.style.display = 'inline-block';
+      labelEl.textContent = state.label + ' (' + count + ')';
+    } else {
+      badge.style.display = 'none';
+      labelEl.textContent = state.label;
+    }
+  }
+
+  // Store ref for external updates
+  msState[containerId].update = () => updateMultiSelectState(containerId);
+}
+
+// Close panels on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ms-container')) {
+    document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.ms-btn.open').forEach(b => b.classList.remove('open'));
+  }
+});
+
+function renderTable() {
+  createMultiSelect('msStatus', 'สถานะ', 'Status');
+  createMultiSelect('msPlatform', 'แพลตฟอร์ม', 'Platform');
+  createMultiSelect('msType', 'ประเภท', 'Project type');
+  createMultiSelect('msSizing', 'ขนาด', 'Overall sizing (by PO)');
+
+  // Header
+  document.getElementById('tableHead').innerHTML = '<tr>' +
+    TABLE_COLUMNS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
+
+  updateTable();
+}
+
+function updateTable() {
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const selStatus = msState.msStatus?.selected;
+  const selPlatform = msState.msPlatform?.selected;
+  const selType = msState.msType?.selected;
+  const selSizing = msState.msSizing?.selected;
+
+  filteredData = allData.filter(row => {
+    if (selStatus && selStatus.size > 0 && !selStatus.has(String(row['Status']))) return false;
+    if (selPlatform && selPlatform.size > 0 && !selPlatform.has(String(row['Platform']))) return false;
+    if (selType && selType.size > 0 && !selType.has(String(row['Project type']))) return false;
+    if (selSizing && selSizing.size > 0 && !selSizing.has(String(row['Overall sizing (by PO)']))) return false;
+    if (search) {
+      const pid = String(row['#'] || '').toLowerCase();
+      const feature = String(row['Feature name'] || '').toLowerCase();
+      const platform = String(row['Platform'] || '').toLowerCase();
+      if (!pid.includes(search) && !feature.includes(search) && !platform.includes(search)) return false;
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  const maxRows = Math.min(filteredData.length, 500);
+  let html = '';
+  for (let i = 0; i < maxRows; i++) {
+    const row = filteredData[i];
+    html += '<tr>' + TABLE_COLUMNS.map(c => {
+      let val = row[c.key];
+      if (val === null || val === undefined) val = '';
+      val = String(val);
+      if (c.badge && c.label === 'Status') return '<td>' + getStatusBadge(val) + '</td>';
+      if (c.badge && c.label === 'Decision') return '<td>' + getDecisionBadge(val) + '</td>';
+      return '<td title="' + val.replace(/"/g, '&quot;') + '">' + val + '</td>';
+    }).join('') + '</tr>';
+  }
+  tbody.innerHTML = html;
+
+  const info = document.getElementById('tableInfo');
+  if (filteredData.length > 500) {
+    info.textContent = `แสดง 500 จาก ${filteredData.length} รายการ (กรองเพิ่มเพื่อดูผลลัพธ์ทั้งหมด)`;
+  } else {
+    info.textContent = `ทั้งหมด ${filteredData.length} รายการ`;
+  }
+}
+
+// Search box listener
+document.getElementById('searchBox').addEventListener('input', updateTable);
+
+// ===== Default Sample Data =====
+function generateSampleData() {
+  const platforms = ['Web', 'iOS', 'Android', 'Backend', 'Admin Portal', 'API Gateway'];
+  const projectTypes = ['New Feature', 'Enhancement', 'Bug Fix', 'Refactor'];
+  const statuses = [
+    '1. Dev', '1. Dev', '1. Dev', '1. Dev', '1. Dev',
+    '2. QA', '2. QA', '2. QA',
+    '3. UAT', '3. UAT',
+    '4. Pre-prod', '4. Pre-prod',
+    '5. Tech go-live', '5. Tech go-live',
+    '6. Public launch',
+    '0. Hold', '0. Cancel',
+  ];
+  const joStatuses = ['JO In Progress', 'JO Done', 'JO Pending', 'N/A'];
+  const months = ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026', 'Sep 2026', 'Oct 2026', 'Nov 2026', 'Dec 2026'];
+  const sizings = ['XS', 'S', 'S', 'S', 'M', 'M', 'M', 'L', 'L', 'XL'];
+  const decisions = ['Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Proceed', 'Propose drop', 'Propose drop', ''];
+  const featureNames = [
+    'Login with SSO', 'Dark Mode Support', 'Payment Gateway v2', 'Push Notification', 'Search Optimization',
+    'User Profile Redesign', 'Cart Checkout Flow', 'Order Tracking Map', 'Multi-language Support', 'Biometric Login',
+    'Data Export Tool', 'Admin Audit Log', 'API Rate Limiting', 'Image Compression', 'Real-time Chat',
+    'Coupon System', 'Loyalty Points', 'Product Reviews', 'Wishlist Feature', 'Social Share',
+    'Email Template Builder', 'Report Scheduler', 'Batch Upload', 'Role Permission Matrix', 'Webhook Integration',
+  ];
+
+  const data = [];
+  for (let i = 0; i < 25; i++) {
+    const status = statuses[i % statuses.length];
+    const platform = platforms[i % platforms.length];
+    const devStart = months[i % months.length];
+    const goLiveIdx = (i % 6) + 3;
+    const techGoLive = months[Math.min(goLiveIdx, months.length - 1)];
+    const publicLaunch = months[Math.min(goLiveIdx + 1, months.length - 1)];
+
+    data.push({
+      '#': 'PID-' + String(1001 + i),
+      'Platform': platform,
+      'Project type': projectTypes[i % projectTypes.length],
+      'Feature name': featureNames[i % featureNames.length],
+      'Status': status,
+      'JO status': joStatuses[i % joStatuses.length],
+      'Dev start  month': devStart,
+      'Tech go-live  month': techGoLive,
+      'Public  launch  month': publicLaunch,
+      'Overall sizing (by PO)': sizings[i % sizings.length],
+      'Propsoed Proceed/Drop': decisions[i % decisions.length],
+    });
+  }
+  return data;
+}
+
+// ===== Business Roadmap (dynamic from Excel data) =====
+// Fiscal year timeline: Q3=Jul-Sep, Q4=Oct-Dec, Q1=Jan-Mar, Q2=Apr-Jun
+const FISCAL_MONTHS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+const CALENDAR_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_PCT = 100 / 12; // ~8.333% per month
+
+// Parse a Tech go-live value to a fiscal-month index (0-11). Returns -1 if unparseable.
+function parseMonthToIndex(val) {
+  if (val === null || val === undefined || val === '') return -1;
+  // Date object
+  if (val instanceof Date) {
+    return FISCAL_MONTHS.indexOf(CALENDAR_MONTHS[val.getMonth()]);
+  }
+  // Excel serial number
+  if (typeof val === 'number' && val > 20000) {
+    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+    return FISCAL_MONTHS.indexOf(CALENDAR_MONTHS[d.getMonth()]);
+  }
+  // String — extract month abbreviation (Jan, Feb, …)
+  const s = String(val).trim();
+  const m = s.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i);
+  if (m) {
+    const mn = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    return FISCAL_MONTHS.indexOf(mn);
+  }
+  return -1;
+}
+
+// Current fiscal-month index — used as default when Tech go-live is missing
+function getCurrentMonthIndex() {
+  const now = new Date();
+  return FISCAL_MONTHS.indexOf(CALENDAR_MONTHS[now.getMonth()]);
+}
+
+// Find a field value by partial key match (handles spacing variations in Excel headers)
+function findFieldValue(row, partial) {
+  const lp = partial.toLowerCase();
+  for (const k in row) {
+    if (k.toLowerCase().includes(lp)) return row[k];
+  }
+  return null;
+}
+
+// Build roadmap data from allData: { platformName: [ { name, start, width }, … ] }
+function buildRoadmapFromData() {
+  const platformMap = {};
+  const defaultIdx = getCurrentMonthIndex();
+  for (const row of allData) {
+    const platform = String(row['Platform'] || '').trim();
+    if (!platform) continue;
+    const featureName = String(row['Feature name'] || '').trim();
+    if (!featureName) continue;
+
+    let idx = parseMonthToIndex(findFieldValue(row, 'Tech go-live'));
+    if (idx < 0) idx = defaultIdx;
+
+    if (!platformMap[platform]) platformMap[platform] = [];
+    if (!platformMap[platform].some(f => f.name === featureName)) {
+      platformMap[platform].push({
+        name: featureName,
+        start: idx * MONTH_PCT,
+        width: MONTH_PCT * 3, // 3-month bar (one quarter)
+      });
+    }
+  }
+  return platformMap;
+}
+
+// Populate the platform <select> from the data
+function updatePlatformSelector() {
+  const platforms = [...new Set(allData.map(r => String(r['Platform'] || '').trim()).filter(p => p))].sort();
+  const sel = document.getElementById('rmPlatform');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="all">All Platforms</option>' +
+    platforms.map(p => '<option value="' + p.replace(/"/g, '&quot;') + '">' + p + '</option>').join('');
+  sel.value = (prev && (prev === 'all' || platforms.includes(prev))) ? prev : 'all';
+}
+
+function renderRoadmap(platform) {
+  const body = document.getElementById('rmBody');
+  if (!body) return;
+  const data = buildRoadmapFromData();
+  const platforms = Object.keys(data).sort();
+  let rows;
+  if (!platform || platform === 'all') {
+    rows = platforms.map(p => ({ label: p, features: data[p] }));
+  } else {
+    rows = [{ label: platform, features: data[platform] || [] }];
+  }
+  let html = '';
+  for (const row of rows) {
+    html += '<div class="rm-group">';
+    html += '<div class="rm-gname">' + row.label + '</div>';
+    html += '<div class="rm-track">';
+    for (const f of row.features) {
+      html += '<div class="rm-frow">';
+      html += '<div class="rm-feat" style="margin-left:' + f.start.toFixed(4) + '%;width:' + f.width.toFixed(4) + '%">';
+      html += '<div class="rm-feat-name">' + f.name + '</div>';
+      html += '</div></div>';
+    }
+    html += '</div></div>';
+  }
+  body.innerHTML = html;
+  if (rmJsonActive) renderJsonView();
+}
+
+// ===== Roadmap JSON View =====
+let rmJsonActive = false;
+
+function toggleRoadmapJson() {
+  rmJsonActive = !rmJsonActive;
+  const btn = document.getElementById('rmToggleJson');
+  const tableView = document.getElementById('rmTableView');
+  const jsonView = document.getElementById('rmJsonView');
+  if (rmJsonActive) {
+    btn.classList.add('active');
+    tableView.style.display = 'none';
+    jsonView.classList.add('active');
+    renderJsonView();
+  } else {
+    btn.classList.remove('active');
+    tableView.style.display = 'block';
+    jsonView.classList.remove('active');
+  }
+}
+
+function generateRoadmapJson(platform) {
+  const defaultIdx = getCurrentMonthIndex();
+  const currentIdx = defaultIdx;
+
+  // Compute quarter labels with years (fiscal year starts Jul)
+  const now = new Date();
+  const calMonth = now.getMonth();
+  const yr = now.getFullYear();
+  const q34Yr = calMonth >= 6 ? yr : yr - 1;
+  const q12Yr = q34Yr + 1;
+  const quarters = ['Q3 ' + q34Yr, 'Q4 ' + q34Yr, 'Q1 ' + q12Yr, 'Q2 ' + q12Yr];
+
+  // Group rows by platform, then by (featureName + span)
+  const platformMap = {};
+  for (const row of allData) {
+    const plat = String(row['Platform'] || '').trim();
+    if (!plat) continue;
+    const featureName = String(row['Feature name'] || '').trim();
+    if (!featureName) continue;
+    if (platform && platform !== 'all' && plat !== platform) continue;
+
+    const techGoLiveRaw = findFieldValue(row, 'Tech go-live');
+    let startIdx = parseMonthToIndex(techGoLiveRaw);
+    if (startIdx < 0) startIdx = defaultIdx;
+
+    // End month: try Public launch, otherwise start + 1
+    const publicLaunchRaw = findFieldValue(row, 'Public launch');
+    let endIdx = parseMonthToIndex(publicLaunchRaw);
+    if (endIdx < 0 || endIdx < startIdx) endIdx = (startIdx + 2) % 12;
+
+    // Status based on start month vs current
+    let status;
+    if (startIdx < currentIdx) status = 'complete';
+    else if (startIdx === currentIdx) status = 'in-process';
+    else status = 'future';
+
+    const span = FISCAL_MONTHS[startIdx] + '-' + FISCAL_MONTHS[endIdx];
+    const key = featureName + '|||' + span;
+
+    if (!platformMap[plat]) platformMap[plat] = {};
+    if (!platformMap[plat][key]) {
+      const feat = {
+        name: featureName,
+        desc: [],
+        span: span,
+        status: status,
+      };
+      // todayScope if span covers current month
+      if (startIdx <= currentIdx && currentIdx <= endIdx) feat.todayScope = true;
+      platformMap[plat][key] = feat;
+    }
+    const pid = String(row['#'] || '').trim();
+    if (pid) platformMap[plat][key].desc.push(pid);
+  }
+
+  // Build groups array with sameRow detection
+  const groups = Object.keys(platformMap).sort().map(plat => {
+    const features = Object.values(platformMap[plat]);
+    // Set sameRow when multiple features share the same span
+    const spanCounts = {};
+    features.forEach(f => { spanCounts[f.span] = (spanCounts[f.span] || 0) + 1; });
+    features.forEach(f => { if (spanCounts[f.span] > 1) f.sameRow = true; });
+    return { name: plat, features: features };
+  });
+
+  return {
+    enabled: true,
+    quarters: quarters,
+    groups: groups,
+  };
+}
+
+function syntaxHighlightJson(obj) {
+  const json = JSON.stringify(obj, null, 2);
+  return json
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span class="rm-json-key">$1</span>$2')
+    .replace(/:\s*("(?:\\.|[^"\\])*")/g, ': <span class="rm-json-str">$1</span>')
+    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="rm-json-num">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="rm-json-bool">$1</span>')
+    .replace(/:\s*null/g, ': <span class="rm-json-null">null</span>');
+}
+
+function renderJsonView() {
+  const platform = document.getElementById('rmPlatform').value;
+  const data = generateRoadmapJson(platform);
+  document.getElementById('rmJsonBox').innerHTML = syntaxHighlightJson(data);
+  const totalFeatures = data.groups.reduce((s, g) => s + g.features.length, 0);
+  document.getElementById('rmJsonInfo').textContent =
+    data.groups.length + ' groups · ' + totalFeatures + ' features';
+}
+
+function copyRoadmapJson() {
+  const platform = document.getElementById('rmPlatform').value;
+  const data = generateRoadmapJson(platform);
+  const json = JSON.stringify(data, null, 2);
+  navigator.clipboard.writeText(json).then(() => {
+    const btn = document.querySelector('.rm-json-copy');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  }).catch(() => {});
+}
+
+// ===== Initialize with sample data on page load =====
+allData = generateSampleData();
+document.getElementById('fileName').textContent = '📄 ข้อมูลตัวอย่าง (25 รายการ)';
+showDashboard();
+
+// ===== Export CSV =====
+function exportCSV() {
+  const headers = TABLE_COLUMNS.map(c => c.label);
+  const rows = filteredData.map(row =>
+    TABLE_COLUMNS.map(c => {
+      let val = row[c.key];
+      if (val === null || val === undefined) val = '';
+      val = String(val).replace(/"/g, '""');
+      return '"' + val + '"';
+    }).join(',')
+  );
+  const csv = '﻿' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dashboard_export.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
