@@ -47,8 +47,10 @@ a{color:var(--accent)}
 @media(max-width:560px){#tools{grid-template-columns:minmax(0,1fr)}}
 #tools section{display:flex;flex-direction:column;min-width:0}
 .group-title{margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
-.tools{display:flex;flex-direction:column;gap:16px;flex:1}
+.tools{display:flex;flex-direction:column;flex:1}
 .tools .tool{flex:1}
+/* a second card of the same group keeps the title row for alignment, but hides the repeated name */
+.group-title.cont{visibility:hidden}
 .tool{display:flex;flex-direction:column;gap:10px;border:1px solid var(--sky-200);border-radius:14px;padding:20px;background:var(--bg);text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
 a.tool:hover{border-color:var(--accent);box-shadow:0 10px 28px rgba(28,111,224,.14);transform:translateY(-2px)}
 .tool-ic{width:44px;height:44px;border-radius:11px;background:var(--sky-100);display:grid;place-items:center;color:var(--accent)}
@@ -109,9 +111,18 @@ a.tool:hover{border-color:var(--accent);box-shadow:0 10px 28px rgba(28,111,224,.
     // groups appear in the order tools.json first mentions them
     var groups=[];
     tools.forEach(function(t){var g=t.group||"Tools";if(groups.indexOf(g)<0)groups.push(g)});
-    document.getElementById("tools").innerHTML=groups.map(function(g){
-      return '<section aria-label="'+esc(g)+'"><h2 class="group-title">'+esc(g)+'</h2><div class="tools">'+tools.filter(function(t){return (t.group||"Tools")===g}).map(card).join("")+'</div></section>';
+    // one card per grid cell, three per row; cards of a group sit side by side under one title
+    var box=document.getElementById("tools"), cells=[];
+    groups.forEach(function(g){tools.filter(function(t){return (t.group||"Tools")===g}).forEach(function(t,i){cells.push({g:g,t:t,first:i===0})})});
+    box.innerHTML=cells.map(function(c){
+      return '<section aria-label="'+esc(c.g)+'"><h2 class="group-title"'+(c.first?'':' aria-hidden="true"')+'>'+esc(c.g)+'</h2><div class="tools">'+card(c.t)+'</div></section>';
     }).join("");
+    // a repeated group name shows only when its card starts a new row
+    function titles(){
+      var n=getComputedStyle(box).gridTemplateColumns.split(" ").length;
+      [].forEach.call(box.children,function(el,i){el.firstChild.classList.toggle("cont",!cells[i].first&&i%n!==0)});
+    }
+    titles(); window.addEventListener("resize",titles);
   });
 })();
 </script>
