@@ -31,6 +31,15 @@
       ]
     },
     {
+      "id": "requirement-roadmap",
+      "name": "Requirement Roadmap",
+      "group": "Project Management",
+      "icon": "roadmap",
+      "path": "requirement-roadmap/",
+      "status": "live",
+      "description": "Upload your requirement list in Excel and see every project by status, platform and go-live month, with filters, charts and CSV export."
+    },
+    {
       "id": "activity-tracker",
       "name": "Activity Tracker",
       "icon": "tracker",
