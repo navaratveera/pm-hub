@@ -36,7 +36,7 @@
       "group": "Project Management",
       "icon": "roadmap",
       "path": "requirement-roadmap/",
-      "status": "live",
+      "status": "soon",
       "description": "Upload your requirement list in Excel and see every project by status, platform and go-live month, with filters, charts and CSV export.",
       "builders": [
         {
