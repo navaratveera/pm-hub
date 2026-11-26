@@ -512,10 +512,10 @@ document.getElementById("app").innerHTML=
          '<div class="seg" role="group" aria-label="Timeline scale">'+Object.keys(SCALES).map(function(k){return '<button type="button" data-scale="'+k+'">'+SCALES[k].label+'</button>'}).join("")+'</div>'+
          '<label class="field">From <input id="view-from" type="text" class="date-in" placeholder="dd/mm/yyyy" autocomplete="off"></label>'+
          '<label class="field">To <input id="view-to" type="text" class="date-in" placeholder="dd/mm/yyyy" autocomplete="off"></label>'+
-         '<div class="seg" role="group" aria-label="Chart size"><button type="button" data-fit="full" title="Tall enough for every row">Full</button><button type="button" data-fit="slide" title="Never taller than 16:9: fits a MacBook screen and a PowerPoint slide">Fit 16:9</button></div>'+
          '<label class="field check"><input id="show-today" type="checkbox"> Today</label>'+
          '<label class="field check"><input id="show-summary" type="checkbox"> Summary</label>'+
-         '<button id="btn-png" class="btn primary" type="button">Export PNG</button>'+
+         '<button id="btn-copy" class="btn" type="button" title="Copy the 16:9 timeline, then paste it into PowerPoint">Copy image</button>'+
+         '<button id="btn-png" class="btn primary" type="button" title="16:9 image, the same shape as a PowerPoint slide">Export PNG</button>'+
        '</div></div>'+
      '<div class="chart-scroll" id="chart-wrap"><div id="chart"></div></div>'+
    '</section>'+
@@ -645,16 +645,24 @@ function tw(s,size,bold){ // rough text width; Thai glyphs are narrower than Lat
 function chev(x0,x1,y,h,tip){tip=Math.max(0,Math.min(tip,(x1-x0)/2));return x0+","+y+" "+(x1-tip)+","+y+" "+x1+","+(y+h/2)+" "+(x1-tip)+","+(y+h)+" "+x0+","+(y+h)}
 function wrapWords(s,max){var out=[],line="";String(s).split(/\s+/).forEach(function(w){if(!line)line=w;else if((line+" "+w).length<=max)line+=" "+w;else{out.push(line);line=w}});if(line)out.push(line);return out.slice(0,4)}
 
-// chart no taller than 16:9, for screens and slides: tries roomy rows first, then a larger canvas (which scales down on screen and on the slide)
+// the chart is always exactly 16:9, the shape of a PowerPoint slide: tries roomy rows first, then a larger canvas (which scales down on screen and on the slide)
 function buildSlide(p){
-  var Ws=[1280,1440,1600,1800,2000,2400], Rs=[30,27,24,22,20,19,18,17,16,15], html;
+  var Ws=[1280,1440,1600,1920,2048,2400], Rs=[30,27,24,22,20,19,18,17,16,15], html;
   for(var i=0;i<Ws.length;i++)for(var j=0;j<Rs.length;j++){
     var fit={W:Ws[i],H:Ws[i]*9/16,row:Rs[j],fail:false};
     html=buildChart(p,fit.W,0,fit);
     if(html==null)return null;
     if(!fit.fail)return html;
   }
-  return buildChart(p,2400,0,{W:2400,H:1350,row:15,force:true}); // more rows than any 16:9 slide can hold
+  // more rows than a 2400-wide slide can hold: widen the canvas until the chart is 16:9 again
+  var W=2400;
+  for(var k=0;k<4;k++){
+    fit={W:W,H:W*9/16,row:15,force:true};
+    html=buildChart(p,W,0,fit);
+    if(fit.need<=fit.H)break;
+    W=Math.ceil(fit.need*16/9/16)*16;
+  }
+  return html;
 }
 // rotated strip names: use two lines when one does not fit the strip
 function stripLines(s){
@@ -837,9 +845,10 @@ function buildChart(p,availW,padR,fit){
     // share the spare height: first a little more space per row, the rest per project
     ROWH+=Math.min(room/nR,ROWH*.3);
     layout(0);
-    layout(Math.min(24,Math.max(0,(fit.H-8-y)/nG)));
+    layout(Math.min(60,Math.max(0,(fit.H-8-y)/nG)));
   }
-  var BOT=y, HT=BOT+(fit?8:12); // never taller than 16:9; a short plan stays short instead of padding out empty space
+  var BOT=y, HT=BOT+(fit?8:12);
+  if(fit){fit.need=HT;HT=Math.max(HT,fit.H)} // exactly 16:9: a short plan keeps white space below so the image fills a slide
   var o=[];
   o.push('<svg xmlns="http://www.w3.org/2000/svg"'+(fit?' class="slide"':'')+' width="'+SW+'" height="'+HT+'" viewBox="0 0 '+SW+' '+HT+'" font-family="'+FONT+'" role="img" aria-label="'+esc((title||"Timeline")+" chart")+'">');
   o.push('<rect width="'+SW+'" height="'+HT+'" fill="#FFFFFF"/>');
@@ -914,12 +923,11 @@ function buildChart(p,availW,padR,fit){
   return o.join("");
 }
 function renderChart(){
-  var wrap=$("#chart-wrap"), html=cur().chartFit==="slide"?buildSlide(cur()):buildChart(cur(),Math.max(320,wrap.clientWidth-24));
+  var wrap=$("#chart-wrap"), html=buildSlide(cur());
   $("#chart").innerHTML=html||'<div class="empty">Add a start and end date to an activity below and the timeline builds itself.</div>';
   $("#view-from").value=dmy(cur().viewFrom); $("#view-to").value=dmy(cur().viewTo);
   $("#show-today").checked=cur().showToday!==false;
   $("#show-summary").checked=!cur().hideSummary;
-  document.querySelectorAll("[data-fit]").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.fit===cur().chartFit))});
   document.querySelectorAll("[data-scale]").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.scale===cur().scale))});
 }
 document.querySelectorAll("[data-scale]").forEach(function(b){b.addEventListener("click",function(){
@@ -927,9 +935,6 @@ document.querySelectorAll("[data-scale]").forEach(function(b){b.addEventListener
 })});
 $("#show-today").addEventListener("change",function(){cur().showToday=this.checked;touch()});
 $("#show-summary").addEventListener("change",function(){cur().hideSummary=!this.checked;touch()});
-document.querySelectorAll("[data-fit]").forEach(function(b){b.addEventListener("click",function(){
-  if(cur().chartFit===b.dataset.fit)return; cur().chartFit=b.dataset.fit; touch();
-})});
 $("#chart").addEventListener("click",function(e){
   var g=e.target.closest("[data-go]"); if(!g)return;
   var tr=document.querySelector('tr[data-id="'+g.getAttribute("data-go")+'"]'); if(!tr)return;
@@ -941,23 +946,37 @@ $("#chart").addEventListener("click",function(e){
 var lastW=0, rz;
 window.addEventListener("resize",function(){clearTimeout(rz);rz=setTimeout(function(){var w=$("#chart-wrap").clientWidth;if(Math.abs(w-lastW)>8){lastW=w;renderChart()}},150)});
 
-/* PNG export */
+/* PNG export: 16:9 at 2x, so it fills a PowerPoint slide sharply */
 var dl=null;
-$("#btn-png").addEventListener("click",function(){
-  var svg=$("#chart svg"); if(!svg){toast("Add activities with dates first");return}
+function makePng(done){
+  var svg=$("#chart svg"); if(!svg){toast("Add activities with dates first");return false}
   var w=+svg.getAttribute("width"), h=+svg.getAttribute("height"), scale=2;
   var img=new Image();
   img.onload=function(){
-    var cv=document.createElement("canvas"); cv.width=w*scale; cv.height=h*scale;
+    var cv=document.createElement("canvas"); cv.width=Math.round(w*scale); cv.height=Math.round(h*scale);
     var cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.scale(scale,scale); cx.drawImage(img,0,0);
-    cv.toBlob(function(blob){
-      var fname=fileBase()+".png";
-      if(dl){dl.save({filename:fname,data:blob}).then(function(r){if(r&&r.status==="saved")toast("Saved "+fname)}).catch(function(e){if(e&&e.code==="unavailable"){dl=null;showImage(blob)}});return}
-      showImage(blob);
-    },"image/png");
+    cv.toBlob(done,"image/png");
   };
   img.onerror=function(){toast("Couldn't create the image in this browser")};
   img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(new XMLSerializer().serializeToString(svg));
+  return true;
+}
+$("#btn-png").addEventListener("click",function(){
+  makePng(function(blob){
+    var fname=fileBase()+".png";
+    if(dl){dl.save({filename:fname,data:blob}).then(function(r){if(r&&r.status==="saved")toast("Saved "+fname)}).catch(function(e){if(e&&e.code==="unavailable"){dl=null;showImage(blob)}});return}
+    showImage(blob);
+  });
+});
+$("#btn-copy").addEventListener("click",function(){
+  if(!$("#chart svg")){toast("Add activities with dates first");return}
+  var got, blobP=new Promise(function(res){got=res});
+  makePng(function(b){got(b)});
+  // the clipboard item is created right away, inside the click, so Safari allows it
+  try{
+    if(!navigator.clipboard||!window.ClipboardItem)throw 0;
+    navigator.clipboard.write([new ClipboardItem({"image/png":blobP})]).then(function(){toast("Copied. Paste it into PowerPoint with Cmd+V or Ctrl+V")},function(){blobP.then(showImage)});
+  }catch(e){blobP.then(showImage)}
 });
 function showImage(blob){
   var url=URL.createObjectURL(blob), ov=document.createElement("div"); ov.className="overlay";
